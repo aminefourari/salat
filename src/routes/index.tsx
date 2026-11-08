@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { PRAYER_ICONS } from '../components/icons'
 import { tz, useDays, useLocation, useNow, useSettings, type Loc } from '../lib/client'
 import { t } from '../lib/i18n'
-import { formatHM, nextPrayer, PRAYERS, skyAt, type DayTimes, type Lang, type Prayer } from '../lib/prayer'
+import { formatHM, nextPrayer, PRAYERS, resolveMethod, skyAt, type DayTimes, type Lang, type Prayer } from '../lib/prayer'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -95,6 +95,7 @@ function Home() {
         })}
       </ul>
       {status === 'denied' && <p className="meta" role="status">{t(lang, 'locationDenied')} <button className="btn" onClick={retry}>{t(lang, 'retry')}</button></p>}
+      {resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
       <p className="meta center">{placeLabel(loc, lang)}</p>
     </>
   )

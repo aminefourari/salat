@@ -33,7 +33,10 @@ match Muslim Pro's within a minute or two.
       margins and matches within ~4 min Sep–Mar, but its summer Fajr/Isha rule differs (up to ~50 min
       earlier Isha in June). We follow Muslim Pro's summer rule, since that is the user's reference.
     Each country's entry is just data in one table, so adding/fixing a country is a one-line change.
-  - **Morocco → strictly the official Ministry of Habous timetable** (user decision). Habous
+  - **Update 2026-11-08:** the Habous site is unreachable from outside Morocco (dev machine and Cloudflare
+    Worker both time out) and no downloadable timetable was found, so Morocco ships with the computed
+    Fajr 19° / Isha 17° method plus a visible note that times may differ by a few minutes.
+  - *(Original intent)* **Morocco → strictly the official Ministry of Habous timetable** (user decision). Habous
     publishes per-city timetables (habous.gov.ma); in Morocco the app shows the published times for
     the nearest Habous city, not a calculation. The Worker fetches and caches each city's timetable
     (D1), and the client gets them from the Worker, cached for offline. Scheduling for Moroccan
