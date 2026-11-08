@@ -1,0 +1,8 @@
+node_modules
+dist
+.wrangler
+.output
+.tanstack
+.superpowers
+.dev.vars
+*.local
