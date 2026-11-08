@@ -4,7 +4,7 @@ import { detectLang } from './i18n'
 import { countryAt } from './methods'
 import { computeDay, dateIn, nextDate, type DayTimes, type Settings } from './prayer'
 
-export type Loc = { lat: number; lon: number; at: number; country: string | null }
+export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null }
 export type Notify = { start: boolean; reminder: boolean }
 
 const KEYS = { settings: 'salat.settings', loc: 'salat.loc', notify: 'salat.notify' } as const
@@ -68,6 +68,7 @@ export function useLocation() {
           write<Loc>(KEYS.loc, { ...next, at: Date.now(), country: countryAt(next.lat, next.lon) })
           syncPush().catch(() => {})
         }
+        resolveCity()
         setStatus('ok')
       },
       () => setStatus('denied'),
@@ -76,6 +77,19 @@ export function useLocation() {
   }, [])
   useEffect(locate, [locate])
   return { loc, status, retry: locate }
+}
+
+/** Looks up the town for the saved location once (on our Worker) and stores it; offline it retries next open. */
+async function resolveCity() {
+  const loc = read<Loc | null>(KEYS.loc, null)
+  if (!loc || loc.city !== undefined) return
+  try {
+    const res = await fetch(`/api/place?lat=${loc.lat.toFixed(3)}&lon=${loc.lon.toFixed(3)}`)
+    if (!res.ok) return
+    const { city } = (await res.json()) as { city: { name: string } | null }
+    const cur = read<Loc | null>(KEYS.loc, null)
+    if (cur && cur.lat === loc.lat && cur.lon === loc.lon) write<Loc>(KEYS.loc, { ...cur, city: city?.name ?? null })
+  } catch {}
 }
 
 export function useNow(ms = 1000) {

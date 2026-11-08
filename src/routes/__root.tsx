@@ -54,14 +54,14 @@ function Shell({ children }: { children: React.ReactNode }) {
     syncPush().catch(() => {})
   }, [])
   const loc = useLoc()
-  let country = ''
-  try { if (loc?.country) country = new Intl.DisplayNames([lang], { type: 'region' }).of(loc.country) ?? '' } catch {}
+  let place = loc?.city ?? ''
+  try { if (!place && loc?.country) place = new Intl.DisplayNames([lang], { type: 'region' }).of(loc.country) ?? '' } catch {}
   const flag = loc?.country ? String.fromCodePoint(...[...loc.country].map(c => 0x1f1a5 + c.charCodeAt(0))) : ''
   return (
     <>
       <header className="topbar">
         <span className="brand"><Mark className="brand-mark" />Salat</span>
-        {country && <span className="chip"><span aria-hidden="true">{flag}</span>{country}</span>}
+        {place && <span className="chip"><span aria-hidden="true">{flag}</span>{place}</span>}
       </header>
       <main className="app">{children}</main>
       <nav className="tabs" aria-label="Salat">

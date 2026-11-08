@@ -31,7 +31,7 @@ function dates(now: Date, lang: Lang) {
 
 const placeLabel = (loc: Loc, lang: Lang) =>
   t(lang, 'lastLocation', {
-    place: `${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)}`,
+    place: loc.city ?? `${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)}`,
     when: new Date(loc.at).toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' }),
   })
 

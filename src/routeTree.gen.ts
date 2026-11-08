@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QiblaRouteImport } from './routes/qibla'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiPlaceRouteImport } from './routes/api/place'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiTestPushRouteImport } from './routes/api/test-push'
 
@@ -30,6 +31,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPlaceRoute = ApiPlaceRouteImport.update({
+  id: '/api/place',
+  path: '/api/place',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
   id: '/api/subscribe',
   path: '/api/subscribe',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/qibla': typeof QiblaRoute
   '/settings': typeof SettingsRoute
+  '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/qibla': typeof QiblaRoute
   '/settings': typeof SettingsRoute
+  '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
 }
@@ -60,19 +68,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/qibla': typeof QiblaRoute
   '/settings': typeof SettingsRoute
+  '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/qibla' | '/settings' | '/api/subscribe' | '/api/test-push'
+  fullPaths:
+    | '/'
+    | '/qibla'
+    | '/settings'
+    | '/api/place'
+    | '/api/subscribe'
+    | '/api/test-push'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/qibla' | '/settings' | '/api/subscribe' | '/api/test-push'
+  to:
+    | '/'
+    | '/qibla'
+    | '/settings'
+    | '/api/place'
+    | '/api/subscribe'
+    | '/api/test-push'
   id:
     | '__root__'
     | '/'
     | '/qibla'
     | '/settings'
+    | '/api/place'
     | '/api/subscribe'
     | '/api/test-push'
   fileRoutesById: FileRoutesById
@@ -81,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   QiblaRoute: typeof QiblaRoute
   SettingsRoute: typeof SettingsRoute
+  ApiPlaceRoute: typeof ApiPlaceRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   ApiTestPushRoute: typeof ApiTestPushRoute
 }
@@ -108,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/place': {
+      id: '/api/place'
+      path: '/api/place'
+      fullPath: '/api/place'
+      preLoaderRoute: typeof ApiPlaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/subscribe': {
       id: '/api/subscribe'
       path: '/api/subscribe'
@@ -129,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   QiblaRoute: QiblaRoute,
   SettingsRoute: SettingsRoute,
+  ApiPlaceRoute: ApiPlaceRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   ApiTestPushRoute: ApiTestPushRoute,
 }
