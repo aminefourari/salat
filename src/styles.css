@@ -3,16 +3,19 @@
 @import '@fontsource/ibm-plex-sans-arabic/400.css';
 @import '@fontsource/ibm-plex-sans-arabic/600.css';
 
-/* The sky is the theme: each prayer period gets its own palette (set via data-sky on <html>). */
-:root, [data-sky='night'] { --top: #0f1533; --bottom: #26306a; --ink: #e9eaf7; --soft: #a9afd6; --line: #ffffff22; --mark: #ffd98a; }
-[data-sky='dawn'] { --top: #23275e; --bottom: #b9798f; --ink: #fbf1f2; --soft: #e1c3cd; --line: #ffffff2a; --mark: #ffe0a3; }
-[data-sky='day'] { --top: #7fb9e6; --bottom: #e6f2fb; --ink: #0d2a46; --soft: #3d5d7c; --line: #0d2a4622; --mark: #0d2a46; }
-[data-sky='afternoon'] { --top: #e3a75c; --bottom: #f8e4c3; --ink: #34200c; --soft: #6e4b26; --line: #34200c22; --mark: #34200c; }
-[data-sky='dusk'] { --top: #4a2a62; --bottom: #d4778a; --ink: #fff1ee; --soft: #f0c6cc; --line: #ffffff2a; --mark: #ffe0a3; }
+/* Royal green with gold. The gradient's lower half shifts with the prayer period (data-sky on <html>). */
+:root {
+  --royal: #0b5d3b; --royal-deep: #053a23; --gold: #e2c46e; --gold-deep: #b38a2e;
+  --top: #06402a; --bottom: #0b5d3b; --ink: #f3f7f1; --soft: #b5cdbd; --line: #ffffff1f; --mark: var(--gold);
+}
+[data-sky='night'] { --top: #032a1a; --bottom: #0a4a30; --soft: #a3bfae; }
+[data-sky='dawn'] { --top: #053a26; --bottom: #2d6a4a; }
+[data-sky='day'] { --top: #0b5d3b; --bottom: #157049; }
+[data-sky='afternoon'] { --top: #0a5636; --bottom: #2e7444; }
+[data-sky='dusk'] { --top: #053a23; --bottom: #24603a; }
 
 * { box-sizing: border-box; }
 html { color-scheme: dark; }
-html[data-sky='day'], html[data-sky='afternoon'] { color-scheme: light; }
 body {
   margin: 0; min-height: 100dvh;
   font: 400 1rem/1.5 'IBM Plex Sans Arabic', system-ui, sans-serif;
@@ -70,11 +73,29 @@ select {
 .check input { width: 1.2rem; height: 1.2rem; accent-color: var(--mark); }
 
 /* Qibla */
-.compass { position: relative; width: min(78vw, 20rem); aspect-ratio: 1; margin: 1.5rem auto; border-radius: 50%; border: 1px solid var(--line); overflow: hidden; }
-.compass .n { position: absolute; left: 50%; top: .5rem; transform: translateX(-50%); color: var(--soft); font-size: .85rem; }
-.compass svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform .2s linear; }
-.deg { text-align: center; font: 700 3rem/1 'Reem Kufi', sans-serif; font-variant-numeric: tabular-nums; margin: 0; }
-.center { text-align: center; }
+.dial { width: min(86vw, 22rem); aspect-ratio: 1; margin: .5rem auto 0; }
+.dial svg { width: 100%; height: 100%; overflow: visible; }
+.dial-rot { transition: transform .15s linear; }
+.ring { fill: color-mix(in srgb, var(--royal-deep) 55%, transparent); stroke: var(--line); stroke-width: 1.5; transition: stroke .3s, filter .3s; }
+.is-aligned .ring { stroke: var(--gold); stroke-width: 3; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 60%, transparent)); }
+.tick { stroke: var(--soft); stroke-width: 1; opacity: .55; }
+.tick-mid { stroke-width: 1.5; opacity: .8; }
+.tick-major { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
+.cardinal { fill: var(--ink); font: 600 17px 'IBM Plex Sans Arabic', sans-serif; text-anchor: middle; dominant-baseline: central; }
+.cardinal.is-north { fill: var(--gold); }
+.deg-label { fill: var(--soft); font: 400 10px 'IBM Plex Sans Arabic', sans-serif; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.needle { fill: var(--gold); }
+.needle-trail { stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; opacity: .55; }
+.kaaba { fill: #14110d; stroke: var(--gold); stroke-width: 1.2; }
+.kaaba-band { fill: var(--gold); }
+.lubber { fill: var(--ink); }
+.hub { fill: var(--gold); stroke: var(--royal-deep); stroke-width: 3; }
+.qibla-info { text-align: center; }
+.qibla-info .meta { margin: .35rem 0 0; }
+.qibla-info .btn { margin-top: 1rem; }
+.qibla-status { font: 700 1.6rem/1.2 'Reem Kufi', sans-serif; margin: .25rem 0 .5rem; min-height: 2rem; }
+.qibla-status.is-aligned { color: var(--gold); }
+.deg { text-align: center; font: 700 3rem/1 'Reem Kufi', sans-serif; font-variant-numeric: tabular-nums; margin: 0 0 .25rem; }
 
 /* Bottom tab bar */
 .tabs {

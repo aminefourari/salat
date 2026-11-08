@@ -72,3 +72,18 @@ export function nextPrayer(today: DayTimes, tomorrow: DayTimes, now: Date): { pr
 }
 
 export const nextDate = (date: string) => new Date(Date.parse(`${date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+
+const KAABA = { lat: 21.4225, lon: 39.8262 }
+/** Great-circle distance to the Kaaba in km. */
+export function kaabaDistanceKm(lat: number, lon: number) {
+  const r = Math.PI / 180, dLat = (KAABA.lat - lat) * r, dLon = (KAABA.lon - lon) * r
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat * r) * Math.cos(KAABA.lat * r) * Math.sin(dLon / 2) ** 2
+  return 12742 * Math.asin(Math.sqrt(h))
+}
+/** Signed shortest turn (degrees, −180..180) from `heading` to `bearing`; positive = turn right. */
+export const turnDelta = (bearing: number, heading: number) => {
+  const d = (((bearing - heading) % 360) + 540) % 360 - 180
+  return d === 180 ? -180 : d
+}
+/** 0..7 index into N, NE, E, SE, S, SW, W, NW. */
+export const compass8 = (deg: number) => Math.round((((deg % 360) + 360) % 360) / 45) % 8
