@@ -1,0 +1,177 @@
+@import '@fontsource/reem-kufi/500.css';
+@import '@fontsource/reem-kufi/700.css';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+
+/* Royal green with gold. The gradient's lower half shifts with the prayer period (data-sky on <html>). */
+:root {
+  --royal: #0b5d3b; --royal-deep: #053a23; --gold: #e2c46e; --gold-deep: #b38a2e;
+  --top: #06402a; --bottom: #0b5d3b; --ink: #f3f7f1; --soft: #b5cdbd; --line: #ffffff1f; --mark: var(--gold);
+  --panel: color-mix(in srgb, var(--royal-deep) 55%, transparent);
+  --pattern: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2264%22%20height%3D%2264%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20stroke%3D%22%23e2c46e%22%20stroke-width%3D%221%22%3E%3Cg%20transform%3D%22translate%280%200%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22/%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22%20transform%3D%22rotate%2845%29%22/%3E%3C/g%3E%3Cg%20transform%3D%22translate%2864%200%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22/%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22%20transform%3D%22rotate%2845%29%22/%3E%3C/g%3E%3Cg%20transform%3D%22translate%280%2064%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22/%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22%20transform%3D%22rotate%2845%29%22/%3E%3C/g%3E%3Cg%20transform%3D%22translate%2864%2064%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22/%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22%20transform%3D%22rotate%2845%29%22/%3E%3C/g%3E%3Cg%20transform%3D%22translate%2832%2032%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22/%3E%3Crect%20x%3D%22-9%22%20y%3D%22-9%22%20width%3D%2218%22%20height%3D%2218%22%20transform%3D%22rotate%2845%29%22/%3E%3C/g%3E%3Cpath%20d%3D%22M9%200H23M41%200H55M9%2064H23M41%2064H55M0%209V23M0%2041V55M64%209V23M64%2041V55M41%2032H55M9%2032H23M32%209V23M32%2041V55%22%20stroke-opacity%3D%22.6%22/%3E%3C/svg%3E");
+}
+[data-sky='night'] { --top: #032a1a; --bottom: #0a4a30; --soft: #a3bfae; }
+[data-sky='dawn'] { --top: #053a26; --bottom: #2d6a4a; }
+[data-sky='day'] { --top: #0b5d3b; --bottom: #157049; }
+[data-sky='afternoon'] { --top: #0a5636; --bottom: #2e7444; }
+[data-sky='dusk'] { --top: #053a23; --bottom: #24603a; }
+
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0; min-height: 100dvh;
+  font: 400 1rem/1.5 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--top), var(--bottom)) fixed;
+  background-color: var(--top);
+  -webkit-font-smoothing: antialiased;
+}
+/* Geometric star lattice, fading out toward the bottom. */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: var(--pattern); background-size: 64px 64px; opacity: .09;
+  mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 85%);
+}
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
+.meta { color: var(--soft); font-size: .85rem; margin: 1rem 0 0; }
+.center { text-align: center; }
+.loading { color: var(--soft); text-align: center; padding: 5rem 0; }
+
+/* ---- shell ---- */
+.topbar {
+  max-width: 30rem; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;
+  padding: max(.75rem, env(safe-area-inset-top)) 1rem 0;
+}
+.brand { display: inline-flex; align-items: center; gap: .5rem; font: 700 1.25rem/1 'Reem Kufi', sans-serif; letter-spacing: .02em; }
+.brand-mark { width: 1.6rem; height: 1.6rem; color: var(--gold); }
+.chip {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .75rem; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); font-size: .85rem; color: var(--soft);
+}
+.app { max-width: 30rem; margin: 0 auto; padding: .5rem 1rem calc(7rem + env(safe-area-inset-bottom)); }
+
+/* Floating tab bar */
+.tabs {
+  position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
+  bottom: calc(.75rem + env(safe-area-inset-bottom));
+  width: min(calc(100% - 2rem), 22rem); display: grid; grid-template-columns: repeat(3, 1fr); gap: .25rem;
+  padding: .4rem; border-radius: 1.6rem;
+  background: color-mix(in srgb, var(--royal-deep) 94%, transparent);
+  backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+  box-shadow: 0 10px 30px #0006, inset 0 1px 0 #ffffff14;
+}
+.tabs a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+  min-height: 3.4rem; border-radius: 1.25rem; color: var(--soft); text-decoration: none; font-size: .72rem;
+  -webkit-tap-highlight-color: transparent; transition: color .2s, background-color .2s;
+}
+.tab-icon { width: 1.5rem; height: 1.5rem; transition: transform .2s; }
+.tabs a[data-status='active'] { color: var(--royal-deep); background: linear-gradient(180deg, #f1da8e, var(--gold)); font-weight: 600; }
+.tabs a:active .tab-icon { transform: scale(.9); }
+
+/* ---- times ---- */
+.dates { display: flex; flex-direction: column; align-items: center; gap: .1rem; margin: .9rem 0 .9rem; color: var(--soft); font-size: .9rem; text-align: center; }
+.hijri { color: var(--gold); }
+
+/* Next prayer inside a mihrab arch: the one loud element. */
+.hero { position: relative; margin: 0 auto 1.25rem; max-width: 20rem; aspect-ratio: 200 / 205; display: grid; place-items: end center; }
+.arch { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.arch-fill { fill: color-mix(in srgb, var(--royal-deep) 65%, transparent); }
+.arch-line { fill: none; stroke: var(--gold); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.arch-inner { fill: none; stroke: var(--gold); stroke-opacity: .35; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.hero-body { position: relative; text-align: center; padding: 0 1.5rem 1.4rem; width: 100%; }
+.hero-body p { margin: 0; }
+.hero-label { color: var(--soft); font-size: .9rem; }
+.hero-name { font: 700 clamp(3rem, 14vw, 4.2rem)/1.05 'Reem Kufi', sans-serif; margin-top: .2rem !important; }
+.hero-name-ar { font: 500 1.5rem/1.3 'Reem Kufi', sans-serif; color: var(--gold); }
+.hero-time { font: 600 1.75rem/1.2 'IBM Plex Sans Arabic', sans-serif; font-variant-numeric: tabular-nums; margin-top: .6rem !important; }
+.hero-countdown { color: var(--soft); font-variant-numeric: tabular-nums; }
+.hero-progress { height: 4px; margin: .85rem auto 0; width: 70%; border-radius: 4px; background: #ffffff1a; overflow: hidden; }
+.hero-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold-deep), var(--gold)); }
+[dir='rtl'] .hero-progress span { background: linear-gradient(270deg, var(--gold-deep), var(--gold)); }
+
+.times { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.row {
+  display: grid; grid-template-columns: 1.5rem 1fr auto auto; align-items: center; gap: .75rem;
+  padding: .8rem 1rem; border-radius: 1rem; background: var(--panel); border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
+}
+.row-icon { width: 1.4rem; height: 1.4rem; color: var(--gold); }
+.row-name { font-weight: 600; }
+.row-ar { font: 500 1rem/1 'Reem Kufi', sans-serif; color: var(--soft); }
+.row-time { font-size: 1.15rem; min-width: 3.2rem; text-align: end; }
+.row.is-minor { background: transparent; padding-block: .45rem; color: var(--soft); }
+.row.is-minor .row-name { font-weight: 400; }
+.row.is-minor .row-icon { color: var(--soft); }
+.row.is-past { opacity: .55; }
+.row.is-next {
+  border-color: color-mix(in srgb, var(--gold) 70%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 16%, var(--royal-deep)), var(--panel));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 8%, transparent);
+}
+[dir='rtl'] .row.is-next { background: linear-gradient(270deg, color-mix(in srgb, var(--gold) 16%, var(--royal-deep)), var(--panel)); }
+.row.is-next .row-time { color: var(--gold); font-weight: 600; }
+
+/* ---- shared controls ---- */
+h1 { font: 700 2rem/1.1 'Reem Kufi', sans-serif; margin: 1rem 0 1.25rem; }
+h2 { font: 600 .95rem/1.3 'IBM Plex Sans Arabic', sans-serif; margin: 1.75rem .25rem .6rem; color: var(--gold); }
+.panel, .notice { padding: 1rem; border-radius: 1.1rem; background: var(--panel); border: 1px solid var(--line); margin: 0 0 1rem; }
+.panel p, .notice p { margin: 0 0 .75rem; }
+.panel p:last-child, .notice p:last-child { margin-bottom: 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--gold); color: var(--gold);
+  background: transparent; border-radius: 999px; padding: .65rem 1.2rem; cursor: pointer; text-decoration: none; font-weight: 600;
+}
+.btn-solid { background: linear-gradient(180deg, #f1da8e, var(--gold)); color: var(--royal-deep); border-color: transparent; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn + .btn { margin-inline-start: .5rem; }
+.field { display: grid; gap: .4rem; padding: .25rem 0 .9rem; }
+.field + .field { border-top: 1px solid var(--line); padding-top: .9rem; }
+.field:last-child { padding-bottom: .25rem; }
+.field label { font-size: .9rem; color: var(--soft); }
+select {
+  width: 100%; padding: .7rem .8rem; border-radius: .8rem; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--royal-deep) 80%, transparent);
+}
+.switch-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem 0; cursor: pointer; }
+.switch-row + .switch-row { border-top: 1px solid var(--line); }
+.switch {
+  appearance: none; -webkit-appearance: none; flex: none; width: 3rem; height: 1.75rem; border-radius: 999px; margin: 0;
+  background: #ffffff26; position: relative; cursor: pointer; transition: background-color .2s;
+}
+.switch::after {
+  content: ''; position: absolute; top: .2rem; inset-inline-start: .2rem; width: 1.35rem; height: 1.35rem;
+  border-radius: 50%; background: var(--ink); transition: transform .2s;
+}
+.switch:checked { background: var(--gold); }
+.switch:checked::after { transform: translateX(1.25rem); background: var(--royal-deep); }
+[dir='rtl'] .switch:checked::after { transform: translateX(-1.25rem); }
+
+/* Qibla */
+.dial { width: min(86vw, 22rem); aspect-ratio: 1; margin: .5rem auto 0; }
+.dial svg { width: 100%; height: 100%; overflow: visible; }
+.dial-rot { transition: transform .15s linear; }
+.ring { fill: color-mix(in srgb, var(--royal-deep) 55%, transparent); stroke: var(--line); stroke-width: 1.5; transition: stroke .3s, filter .3s; }
+.is-aligned .ring { stroke: var(--gold); stroke-width: 3; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 60%, transparent)); }
+.tick { stroke: var(--soft); stroke-width: 1; opacity: .55; }
+.tick-mid { stroke-width: 1.5; opacity: .8; }
+.tick-major { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
+.cardinal { fill: var(--ink); font: 600 17px 'IBM Plex Sans Arabic', sans-serif; text-anchor: middle; dominant-baseline: central; }
+.cardinal.is-north { fill: var(--gold); }
+.deg-label { fill: var(--soft); font: 400 10px 'IBM Plex Sans Arabic', sans-serif; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.needle { fill: var(--gold); }
+.needle-trail { stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; opacity: .55; }
+.kaaba { fill: #14110d; stroke: var(--gold); stroke-width: 1.2; }
+.kaaba-band { fill: var(--gold); }
+.lubber { fill: var(--ink); }
+.hub { fill: var(--gold); stroke: var(--royal-deep); stroke-width: 3; }
+.qibla-info { text-align: center; }
+.qibla-info .meta { margin: .35rem 0 0; }
+.qibla-info .btn { margin-top: 1rem; }
+.qibla-status { font: 700 1.6rem/1.2 'Reem Kufi', sans-serif; margin: .25rem 0 .5rem; min-height: 2rem; }
+.qibla-status.is-aligned { color: var(--gold); }
+.deg { text-align: center; font: 700 3rem/1 'Reem Kufi', sans-serif; font-variant-numeric: tabular-nums; margin: 0 0 .25rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
