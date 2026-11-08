@@ -69,8 +69,8 @@ function QiblaPage() {
 
   if (!loc) {
     return status === 'denied'
-      ? <div className="notice" role="alert"><p>{t(lang, 'locationDenied')}</p><button className="btn" onClick={retry}>{t(lang, 'retry')}</button></div>
-      : <p className="next-label next">{t(lang, 'locating')}</p>
+      ? <div className="panel" role="alert"><p>{t(lang, 'locationDenied')}</p><button className="btn" onClick={retry}>{t(lang, 'retry')}</button></div>
+      : <p className="loading">{t(lang, 'locating')}</p>
   }
 
   const deg = Math.round(bearing)

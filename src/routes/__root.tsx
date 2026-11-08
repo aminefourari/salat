@@ -1,7 +1,8 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
-import { syncPush, useSettings } from '../lib/client'
+import { syncPush, useLoc, useSettings } from '../lib/client'
+import { Mark, NavQibla, NavSettings, NavTimes } from '../components/icons'
 import { t } from '../lib/i18n'
 
 export const Route = createRootRoute({
@@ -52,13 +53,21 @@ function Shell({ children }: { children: React.ReactNode }) {
     // change or a rotated push subscription heals itself.
     syncPush().catch(() => {})
   }, [])
+  const loc = useLoc()
+  let country = ''
+  try { if (loc?.country) country = new Intl.DisplayNames([lang], { type: 'region' }).of(loc.country) ?? '' } catch {}
+  const flag = loc?.country ? String.fromCodePoint(...[...loc.country].map(c => 0x1f1a5 + c.charCodeAt(0))) : ''
   return (
     <>
+      <header className="topbar">
+        <span className="brand"><Mark className="brand-mark" />Salat</span>
+        {country && <span className="chip"><span aria-hidden="true">{flag}</span>{country}</span>}
+      </header>
       <main className="app">{children}</main>
       <nav className="tabs" aria-label="Salat">
-        <Link to="/">{t(lang, 'times')}</Link>
-        <Link to="/qibla">{t(lang, 'qibla')}</Link>
-        <Link to="/settings">{t(lang, 'settings')}</Link>
+        <Link to="/"><NavTimes className="tab-icon" /><span>{t(lang, 'times')}</span></Link>
+        <Link to="/qibla"><NavQibla className="tab-icon" /><span>{t(lang, 'qibla')}</span></Link>
+        <Link to="/settings"><NavSettings className="tab-icon" /><span>{t(lang, 'settings')}</span></Link>
       </nav>
     </>
   )

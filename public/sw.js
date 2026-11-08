@@ -1,5 +1,5 @@
 // Salat service worker: offline app shell + push notifications.
-const CACHE = 'salat-v4'
+const CACHE = 'salat-v5'
 const SHELL = ['/', '/qibla', '/settings', '/manifest.webmanifest', '/icon-192.png']
 
 // Precache the shell pages plus the hashed JS/CSS they reference, so the first offline launch works.

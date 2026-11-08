@@ -46,59 +46,65 @@ function SettingsPage() {
     <>
       <h1>{t(lang, 'settings')}</h1>
 
-      <div className="field">
-        <label htmlFor="lang">{t(lang, 'language')}</label>
-        <select id="lang" value={lang} onChange={e => update({ lang: e.target.value as Lang })}>
-          <option value="ar">العربية</option>
-          <option value="en">English</option>
-          <option value="fr">Français</option>
-        </select>
-      </div>
-
-      <div className="field">
-        <label htmlFor="method">{t(lang, 'method')}</label>
-        <select id="method" value={s.method} onChange={e => update({ method: e.target.value as Settings['method'] })}>
-          <option value="auto">{t(lang, 'auto', { method: auto })}</option>
-          {METHOD_IDS.map(id => <option key={id} value={id}>{t(lang, `m.${id}`)}</option>)}
-        </select>
-      </div>
-
-      <div className="field">
-        <label htmlFor="asr">{t(lang, 'asrMethod')}</label>
-        <select id="asr" value={s.asr} onChange={e => update({ asr: e.target.value as Settings['asr'] })}>
-          <option value="standard">{t(lang, 'standard')}</option>
-          <option value="hanafi">{t(lang, 'hanafi')}</option>
-        </select>
+      <h2>{t(lang, 'times')}</h2>
+      <div className="panel">
+        <div className="field">
+          <label htmlFor="method">{t(lang, 'method')}</label>
+          <select id="method" value={s.method} onChange={e => update({ method: e.target.value as Settings['method'] })}>
+            <option value="auto">{t(lang, 'auto', { method: auto })}</option>
+            {METHOD_IDS.map(id => <option key={id} value={id}>{t(lang, `m.${id}`)}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="asr">{t(lang, 'asrMethod')}</label>
+          <select id="asr" value={s.asr} onChange={e => update({ asr: e.target.value as Settings['asr'] })}>
+            <option value="standard">{t(lang, 'standard')}</option>
+            <option value="hanafi">{t(lang, 'hanafi')}</option>
+          </select>
+        </div>
       </div>
 
       <h2>{t(lang, 'notifications')}</h2>
-      <label className="check">
-        <input type="checkbox" checked={notify.start} onChange={e => setNotify({ ...notify, start: e.target.checked })} />
-        {t(lang, 'notifyStart')}
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={notify.reminder} onChange={e => setNotify({ ...notify, reminder: e.target.checked })} />
-        {t(lang, 'notifyReminder')}
-      </label>
-
-      <div className="notice" role="status">
+      <div className="panel">
+        <label className="switch-row">
+          {t(lang, 'notifyStart')}
+          <input className="switch" type="checkbox" role="switch" checked={notify.start} onChange={e => setNotify({ ...notify, start: e.target.checked })} />
+        </label>
+        <label className="switch-row">
+          {t(lang, 'notifyReminder')}
+          <input className="switch" type="checkbox" role="switch" checked={notify.reminder} onChange={e => setNotify({ ...notify, reminder: e.target.checked })} />
+        </label>
+      </div>
+      <div className="panel" role="status">
         {push === 'install' && <p>{t(lang, 'installHint')}</p>}
         {push === 'unsupported' && <p>{t(lang, 'unsupported')}</p>}
         {push === 'denied' && <p>{t(lang, 'denied')}</p>}
         {push === 'on' && <p>{t(lang, 'enabled')}</p>}
-        {(push === 'on' || push === 'off') && (
-          <button className={push === 'on' ? 'btn' : 'btn btn-solid'} onClick={toggle} disabled={busy || !loc}>
-            {t(lang, push === 'on' ? 'disable' : 'enable')}
-          </button>
-        )}
-        {push === 'on' && (
-          <button className="btn" style={{ marginInlineStart: '.5rem' }} disabled={busy}
-            onClick={() => { setError(''); testPush().catch(e => setError(String(e.message ?? e))) }}>
-            {t(lang, 'sendTest')}
-          </button>
-        )}
         {!loc && push === 'off' && <p className="meta">{t(lang, 'locating')}</p>}
+        {(push === 'on' || push === 'off') && (
+          <p>
+            <button className={push === 'on' ? 'btn' : 'btn btn-solid'} onClick={toggle} disabled={busy || !loc}>
+              {t(lang, push === 'on' ? 'disable' : 'enable')}
+            </button>
+            {push === 'on' && (
+              <button className="btn" disabled={busy} onClick={() => { setError(''); testPush().catch(e => setError(String(e.message ?? e))) }}>
+                {t(lang, 'sendTest')}
+              </button>
+            )}
+          </p>
+        )}
         {error && <p className="meta" role="alert">{error}</p>}
+      </div>
+
+      <h2>{t(lang, 'language')}</h2>
+      <div className="panel">
+        <div className="field">
+          <select id="lang" aria-label={t(lang, 'language')} value={lang} onChange={e => update({ lang: e.target.value as Lang })}>
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+        </div>
       </div>
     </>
   )
