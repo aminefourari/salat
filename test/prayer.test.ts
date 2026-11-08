@@ -30,7 +30,7 @@ describe('aachen method', () => {
 
   // The center's own table vs our Muslim Pro–matching method: Isha is deliberately 3 min earlier.
   it('aachen fixture Sep–Mar within 4 min', () => {
-    const times = fixture.times as Record<string, Record<string, Record<string, { t: string }>>>
+    const times = fixture.times as unknown as Record<string, Record<string, Record<string, { t: string }>>>
     let n = 0
     for (const m of ['1', '2', '3', '9', '10', '11', '12']) {
       for (const [day, v] of Object.entries(times[m])) {
