@@ -10,6 +10,12 @@ type Orientation = DeviceOrientationEvent & { webkitCompassHeading?: number; web
 const ALIGNED_DEG = 5
 const TICKS = Array.from({ length: 72 }, (_, i) => i * 5)
 
+const COMPASS_KEY = 'salat.compass'
+const rememberCompass = () => { try { localStorage.setItem(COMPASS_KEY, 'on') } catch {} }
+const compassRemembered = () => { try { return localStorage.getItem(COMPASS_KEY) === 'on' } catch { return false } }
+const permissionApi = () =>
+  (typeof DeviceOrientationEvent !== 'undefined' ? (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission : undefined)
+
 const hasSensor = () => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && matchMedia('(pointer: coarse)').matches
 const screenAngle = () => (typeof screen !== 'undefined' && screen.orientation ? screen.orientation.angle : 0)
 
@@ -44,8 +50,21 @@ function QiblaPage() {
   const [sensor, setSensor] = useState(false)
   const [listening, setListening] = useState(false)
   const [denied, setDenied] = useState(false)
+  const [needsTap, setNeedsTap] = useState(false)
   const { heading, inaccurate } = useHeading(listening)
-  useEffect(() => setSensor(hasSensor()), [])
+
+  // Start listening right away when no prompt is needed (Android), or when the user turned the compass on before.
+  // If iOS has dropped the permission, no events arrive; then fall back to the button (iOS needs a tap to ask).
+  useEffect(() => {
+    const ok = hasSensor()
+    setSensor(ok)
+    if (ok && (!permissionApi() || compassRemembered())) setListening(true)
+  }, [])
+  useEffect(() => {
+    if (!listening || heading != null) return
+    const id = setTimeout(() => setNeedsTap(true), 1500)
+    return () => clearTimeout(id)
+  }, [listening, heading])
 
   // Unwrapped dial rotation so the dial never spins the long way round between 359° and 0°.
   const rot = useRef(0)
@@ -62,8 +81,10 @@ function QiblaPage() {
   }, [aligned])
 
   async function start() {
-    const req = (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission
+    const req = permissionApi()
     if (req && (await req().catch(() => 'denied')) !== 'granted') return setDenied(true)
+    rememberCompass()
+    setNeedsTap(false)
     setListening(true)
   }
 
@@ -122,8 +143,8 @@ function QiblaPage() {
           : <p className="deg">{deg}°</p>}
         <p className="meta">{t(lang, 'qiblaBearing', { deg })} · {dir}</p>
         <p className="meta">{t(lang, 'distance', { km })}</p>
-        {sensor && !listening && !denied && <button className="btn btn-solid" onClick={start}>{t(lang, 'useCompass')}</button>}
-        {listening && !live && <p className="meta">{t(lang, 'compassHint')}</p>}
+        {sensor && !denied && !live && (!listening || needsTap) && <button className="btn btn-solid" onClick={start}>{t(lang, 'useCompass')}</button>}
+        {listening && !live && !needsTap && <p className="meta">{t(lang, 'compassHint')}</p>}
         {live && inaccurate && <p className="meta" role="status">{t(lang, 'calibrate')}</p>}
         {denied && <p className="meta" role="alert">{t(lang, 'compassDenied', { deg, dir })}</p>}
         {!sensor && <p className="meta">{t(lang, 'noCompass', { deg, dir })}</p>}
