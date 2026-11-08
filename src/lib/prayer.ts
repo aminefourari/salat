@@ -13,7 +13,6 @@ export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true }
     case 'aachen':
       // Matches Muslim Pro's "Islamic Center Aachen" (Isha −3), plus the center's Diyanet safety margins.
       p = new CalculationParameters('Other', 18, 17)
-      p.highLatitudeRule = HighLatitudeRule.TwilightAngle
       p.adjustments.isha = -3
       if (margins) Object.assign(p.adjustments, { sunrise: -7, dhuhr: 5, asr: 4, maghrib: 7 })
       break
@@ -31,7 +30,8 @@ export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true }
     case 'turkey': p = CalculationMethod.Turkey(); break
     case 'tehran': p = CalculationMethod.Tehran(); break
   }
-  if (id !== 'aachen' && !p.highLatitudeRule) p.highLatitudeRule = HighLatitudeRule.TwilightAngle
+  // adhan defaults to MiddleOfTheNight, which puts summer Isha after midnight up north; Muslim Pro uses angle-based.
+  p.highLatitudeRule = HighLatitudeRule.TwilightAngle
   p.madhab = asr === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi
   return p
 }

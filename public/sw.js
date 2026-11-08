@@ -1,9 +1,17 @@
 // Salat service worker: offline app shell + push notifications.
-const CACHE = 'salat-v2'
+const CACHE = 'salat-v3'
 const SHELL = ['/', '/qibla', '/settings', '/manifest.webmanifest', '/icon-192.png']
 
+// Precache the shell pages plus the hashed JS/CSS they reference, so the first offline launch works.
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()))
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE)
+    await c.addAll(SHELL)
+    const pages = await Promise.all(['/', '/qibla', '/settings'].map(async p => (await c.match(p)).text()))
+    const assets = [...new Set(pages.join('').match(/\/assets\/[\w.-]+\.(?:js|css|woff2?)/g) || [])]
+    await c.addAll(assets)
+    await self.skipWaiting()
+  })())
 })
 
 self.addEventListener('activate', e => {

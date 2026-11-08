@@ -69,3 +69,11 @@ describe('next prayer and sky', () => {
       .toEqual(['night', 'dawn', 'day', 'afternoon', 'dusk', 'night'])
   })
 })
+
+describe('high-latitude rule', () => {
+  it('non-Aachen methods use TwilightAngle in summer up north (no Isha after midnight)', () => {
+    const d = computeDay(...HAGENOW, '2026-06-21', TZ, { method: 'mwl', asr: 'standard', lang: 'en' })
+    expect(formatHM(d.isha, TZ) > '23:00' && formatHM(d.isha, TZ) < '23:59', formatHM(d.isha, TZ)).toBe(true)
+    expect(formatHM(d.fajr, TZ) > '02:00' && formatHM(d.fajr, TZ) < '03:30', formatHM(d.fajr, TZ)).toBe(true)
+  })
+})

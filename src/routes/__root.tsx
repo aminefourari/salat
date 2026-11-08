@@ -1,7 +1,7 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
-import { useSettings } from '../lib/client'
+import { syncPush, useSettings } from '../lib/client'
 import { t } from '../lib/i18n'
 
 export const Route = createRootRoute({
@@ -48,6 +48,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   }, [lang])
   useEffect(() => {
     if ('serviceWorker' in navigator && !import.meta.env.DEV) navigator.serviceWorker.register('/sw.js').catch(err => console.error('sw', err))
+    // Re-send this device's location/tz/settings/endpoint on every open, so a missed sync, a time zone
+    // change or a rotated push subscription heals itself.
+    syncPush().catch(() => {})
   }, [])
   return (
     <>
