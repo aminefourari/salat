@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import fixture from './fixtures/aachen-2026.json'
-import { computeDay, formatHM, paramsFor, type Settings } from '../src/lib/prayer'
+import { computeDay, formatHM, nextPrayer, paramsFor, skyAt, type Settings } from '../src/lib/prayer'
 import { countryAt, methodForCountry } from '../src/lib/methods'
 
 const TZ = 'Europe/Berlin'
@@ -53,5 +53,19 @@ describe('country → method', () => {
   it('finds country from coordinates', () => {
     expect(countryAt(53.43, 11.19)).toBe('DE')
     expect(countryAt(33.57, -7.59)).toBe('MA')
+  })
+})
+
+describe('next prayer and sky', () => {
+  const day = computeDay(...HAGENOW, '2026-11-08', TZ, s)
+  const tom = computeDay(...HAGENOW, '2026-11-09', TZ, s)
+  const at = (hm: string) => new Date(`2026-11-08T${hm}:00+01:00`)
+  it('picks the next prayer, rolling to tomorrow after Isha', () => {
+    expect(nextPrayer(day, tom, at('13:00')).prayer).toBe('asr')
+    expect(nextPrayer(day, tom, at('23:00'))).toEqual({ prayer: 'fajr', at: tom.fajr })
+  })
+  it('maps time to sky period', () => {
+    expect([at('03:00'), at('06:00'), at('12:00'), at('15:00'), at('17:00'), at('22:00')].map(n => skyAt(day, n)))
+      .toEqual(['night', 'dawn', 'day', 'afternoon', 'dusk', 'night'])
   })
 })

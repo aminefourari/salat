@@ -54,3 +54,21 @@ export const formatHM = (d: Date, tz: string) =>
 export const dateIn = (d: Date, tz: string) => d.toLocaleDateString('en-CA', { timeZone: tz })
 
 export const qibla = (lat: number, lon: number) => Qibla(new Coordinates(lat, lon))
+
+export type Sky = 'night' | 'dawn' | 'day' | 'afternoon' | 'dusk'
+export function skyAt(d: DayTimes, now: Date): Sky {
+  const n = now.getTime()
+  if (n < d.fajr.getTime() || n >= d.isha.getTime()) return 'night'
+  if (n < d.sunrise.getTime()) return 'dawn'
+  if (n < d.asr.getTime()) return 'day'
+  if (n < d.maghrib.getTime()) return 'afternoon'
+  return 'dusk'
+}
+
+/** The next prayer after `now`: today's if any remain, else tomorrow's Fajr. */
+export function nextPrayer(today: DayTimes, tomorrow: DayTimes, now: Date): { prayer: Prayer; at: Date } {
+  const p = PRAYERS.find(k => today[k].getTime() > now.getTime())
+  return p ? { prayer: p, at: today[p] } : { prayer: 'fajr', at: tomorrow.fajr }
+}
+
+export const nextDate = (date: string) => new Date(Date.parse(`${date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10)

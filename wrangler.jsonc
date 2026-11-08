@@ -15,7 +15,6 @@
 		{ "binding": "DB", "database_name": "salat", "database_id": "14fcfca9-2dd2-47c4-9242-d7790272d0a0", "migrations_dir": "migrations" }
 	],
 	"vars": {
-		"VAPID_PUBLIC_KEY": "BIjHbRVBp2kI6TBpgMgz2WAM-6Pkn_x-sgPQFyHB4UeS4qTPv3HoC7iJ9blzaRehHKq9CiJPdMKoqUwjg0dN2y8",
 		"VAPID_SUBJECT": "https://salat.aminethewiz18.workers.dev"
 	}
 }

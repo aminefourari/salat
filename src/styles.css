@@ -1,1 +1,89 @@
-@import "tailwindcss";
+@import '@fontsource/reem-kufi/500.css';
+@import '@fontsource/reem-kufi/700.css';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+
+/* The sky is the theme: each prayer period gets its own palette (set via data-sky on <html>). */
+:root, [data-sky='night'] { --top: #0f1533; --bottom: #26306a; --ink: #e9eaf7; --soft: #a9afd6; --line: #ffffff22; --mark: #ffd98a; }
+[data-sky='dawn'] { --top: #23275e; --bottom: #b9798f; --ink: #fbf1f2; --soft: #e1c3cd; --line: #ffffff2a; --mark: #ffe0a3; }
+[data-sky='day'] { --top: #7fb9e6; --bottom: #e6f2fb; --ink: #0d2a46; --soft: #3d5d7c; --line: #0d2a4622; --mark: #0d2a46; }
+[data-sky='afternoon'] { --top: #e3a75c; --bottom: #f8e4c3; --ink: #34200c; --soft: #6e4b26; --line: #34200c22; --mark: #34200c; }
+[data-sky='dusk'] { --top: #4a2a62; --bottom: #d4778a; --ink: #fff1ee; --soft: #f0c6cc; --line: #ffffff2a; --mark: #ffe0a3; }
+
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+html[data-sky='day'], html[data-sky='afternoon'] { color-scheme: light; }
+body {
+  margin: 0; min-height: 100dvh;
+  font: 400 1rem/1.5 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--top), var(--bottom)) fixed;
+  background-color: var(--top);
+  transition: background-color 1.2s;
+  -webkit-font-smoothing: antialiased;
+}
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--mark); outline-offset: 3px; border-radius: 4px; }
+
+.app { max-width: 30rem; margin: 0 auto; padding: max(1rem, env(safe-area-inset-top)) 1rem calc(5.5rem + env(safe-area-inset-bottom)); }
+
+/* Next prayer: the one loud element. */
+.next { padding: 2.5rem 0 2rem; }
+.next-label { color: var(--soft); font-size: .95rem; margin: 0; }
+.next-name { font: 700 clamp(3.5rem, 18vw, 5.5rem)/1 'Reem Kufi', sans-serif; margin: .25rem 0 0; letter-spacing: -.01em; }
+.next-name-ar { font: 500 1.6rem/1.2 'Reem Kufi', sans-serif; color: var(--soft); margin: .35rem 0 0; }
+.next-when { margin: 1.1rem 0 0; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.next-when strong { font-weight: 600; }
+
+.times { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.times li {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: .85rem .25rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums;
+}
+.times .t { font-size: 1.2rem; }
+.times .minor { color: var(--soft); font-size: .95rem; }
+.times .minor .t { font-size: 1rem; }
+.times .is-next { font-weight: 600; box-shadow: inset 3px 0 0 var(--mark); padding-inline-start: .75rem; }
+[dir='rtl'] .times .is-next { box-shadow: inset -3px 0 0 var(--mark); }
+.times .is-past { color: var(--soft); }
+
+.meta { color: var(--soft); font-size: .85rem; margin: 1rem 0 0; }
+.notice { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; }
+.notice p { margin: 0 0 .75rem; }
+
+.btn {
+  display: inline-block; border: 1px solid var(--ink); background: transparent; border-radius: 999px;
+  padding: .6rem 1.1rem; cursor: pointer; text-decoration: none;
+}
+.btn-solid { background: var(--ink); color: var(--top); border-color: var(--ink); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+h1 { font: 700 2rem/1.1 'Reem Kufi', sans-serif; margin: 1.5rem 0 1.25rem; }
+h2 { font: 600 1rem/1.3 inherit; margin: 2rem 0 .5rem; color: var(--soft); }
+.field { display: grid; gap: .35rem; margin: 0 0 1.1rem; }
+.field label { font-size: .95rem; }
+select {
+  width: 100%; padding: .65rem .75rem; border-radius: 10px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--top) 60%, transparent);
+}
+.check { display: flex; gap: .65rem; align-items: center; padding: .5rem 0; }
+.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--mark); }
+
+/* Qibla */
+.compass { position: relative; width: min(78vw, 20rem); aspect-ratio: 1; margin: 1.5rem auto; border-radius: 50%; border: 1px solid var(--line); overflow: hidden; }
+.compass .n { position: absolute; left: 50%; top: .5rem; transform: translateX(-50%); color: var(--soft); font-size: .85rem; }
+.compass svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform .2s linear; }
+.deg { text-align: center; font: 700 3rem/1 'Reem Kufi', sans-serif; font-variant-numeric: tabular-nums; margin: 0; }
+.center { text-align: center; }
+
+/* Bottom tab bar */
+.tabs {
+  position: fixed; inset-inline: 0; bottom: 0; display: flex; justify-content: center; gap: .25rem;
+  padding: .5rem 1rem calc(.5rem + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--top) 85%, transparent); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+}
+.tabs a { flex: 0 1 8rem; text-align: center; padding: .5rem; border-radius: 10px; color: var(--soft); text-decoration: none; }
+.tabs a[data-status='active'] { color: var(--ink); font-weight: 600; background: var(--line); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
