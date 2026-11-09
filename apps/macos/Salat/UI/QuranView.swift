@@ -63,7 +63,7 @@ struct QuranView: View {
             Picker(t(.reciter, lang), selection: Binding(get: { reciter }, set: { listenReciter = $0 })) {
                 ForEach(Reciter.all) { Text($0.name(lang)).tag($0.id) }
             }
-            .frame(width: 220)
+            .frame(width: 170)
         }
         ToolbarItemGroup {
             Button(t(.previous, lang), systemImage: "backward.fill") { player.previous() }.disabled(!selectedIsLoaded)

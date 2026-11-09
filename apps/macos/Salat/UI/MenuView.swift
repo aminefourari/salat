@@ -15,6 +15,7 @@ struct MenuView: View {
     let engine: AlertEngine
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @AppStorage("section") private var section = AppSection.prayer
 
     var lang: Lang { engine.settings.d.lang }
 
@@ -42,8 +43,8 @@ struct MenuView: View {
                 Button(t(.stop, lang), systemImage: "stop.fill") { engine.player.stop() }.buttonStyle(GoldButtonStyle())
             }
             HStack(spacing: 8) {
-                Button(t(.quran, lang), systemImage: "book") { show { openWindow(id: "quran") } }.buttonStyle(GoldButtonStyle()).fixedSize()
-                Button(t(.adhkar, lang), systemImage: "hands.and.sparkles") { show { openWindow(id: "adhkar") } }.buttonStyle(GoldButtonStyle()).fixedSize()
+                Button(t(.quran, lang), systemImage: "book") { show { section = .quran; openWindow(id: "main") } }.buttonStyle(GoldButtonStyle()).fixedSize()
+                Button(t(.adhkar, lang), systemImage: "hands.and.sparkles") { show { section = .adhkar; openWindow(id: "main") } }.buttonStyle(GoldButtonStyle()).fixedSize()
                 Spacer()
                 Button(t(.settings, lang), systemImage: "slider.horizontal.3") { show { openSettings() } }
                     .labelStyle(.iconOnly).buttonStyle(GoldOutlineButtonStyle()).help(t(.settings, lang))

@@ -44,4 +44,4 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - Per-country method config is data in `methods.ts` / `Methods.swift`; adding a country is one entry in each.
 - Times are formatted in the device's/subscription's IANA time zone, never UTC.
 - No accounts, analytics, or third-party client calls. Exceptions (audio only): recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and adhkar audio from `www.hisnmuslim.com`. The Mac app caches them offline; the website streams them directly from the browser (user decision).
-- UI changes on the Mac: check them with `Salat.app/Contents/MacOS/Salat -snapshot DIR` (renders menu, Quran, adhkar in dark and light) and refresh `docs/screenshots/`.
+- UI changes on the Mac: check them with `Salat.app/Contents/MacOS/Salat -snapshot DIR` (renders the menu and each window section: times, Quran, adhkar, in dark and light) and refresh `docs/screenshots/`.
