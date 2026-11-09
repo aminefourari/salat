@@ -9,7 +9,7 @@ enum Snapshots {
         return a.firstIndex(of: "-snapshot").flatMap { a.indices.contains($0 + 1) ? URL(fileURLWithPath: a[$0 + 1]) : nil }
     }
 
-    /// In snapshot mode the Quran and Adhkar windows open at launch so they can be captured.
+    /// In snapshot mode the main window opens at launch so they can be captured.
     static var launch: SceneLaunchBehavior { dir == nil ? .automatic : .presented }
 
     static func run(engine: AlertEngine, quran: QuranPlayer, adhkar: AdhkarPlayer, to dir: URL) {
@@ -21,12 +21,18 @@ enum Snapshots {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 let name = dark ? "dark" : "light"
                 save(MenuView(engine: engine), dark ? .dark : .light, dir.appendingPathComponent("menu-\(name).png"))
-                for w in NSApp.windows where w.isVisible && w.contentView != nil {
-                    let id = w.identifier?.rawValue ?? ""
-                    let kind = id.contains("quran") ? "quran" : id.contains("adhkar") ? "adhkar" : nil
-                    if let kind { capture(w, dir.appendingPathComponent("\(kind)-\(name).png")) }
+                // Each section of the main window, one second apart so it can render.
+                @MainActor func shoot(_ kinds: ArraySlice<AppSection>) {
+                    guard let kind = kinds.first else { return next() }
+                    UserDefaults.standard.set(kind.rawValue, forKey: "section")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        for w in NSApp.windows where w.isVisible && (w.identifier?.rawValue ?? "").contains("main") {
+                            capture(w, dir.appendingPathComponent("\(kind == .prayer ? "times" : kind.rawValue)-\(name).png"))
+                        }
+                        shoot(kinds.dropFirst())
+                    }
                 }
-                next()
+                shoot(AppSection.allCases[...])
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { // let location and the first tick settle

@@ -43,12 +43,10 @@ struct SalatApp: App {
     var body: some Scene {
         MenuBarExtra { MenuView(engine: engine) } label: { MenuLabel(engine: engine) }
             .menuBarExtraStyle(.window)
-        Window(t(.quran, engine.settings.d.lang), id: "quran") { QuranView(settings: engine.settings, player: quran) }
+        Window("Salat", id: "main") { MainView(engine: engine, quran: quran, adhkar: adhkar) }
             .defaultSize(width: 900, height: 700)
             .defaultLaunchBehavior(Snapshots.launch)
-        Window(t(.adhkar, engine.settings.d.lang), id: "adhkar") { AdhkarView(settings: engine.settings, player: adhkar) }
-            .defaultSize(width: 900, height: 700)
-            .defaultLaunchBehavior(Snapshots.launch)
+            .commands { SectionCommands(lang: engine.settings.d.lang) }
         Settings { SettingsView(engine: engine, quran: quran, adhkar: adhkar) }
     }
 }
