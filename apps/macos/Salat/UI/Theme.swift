@@ -33,7 +33,15 @@ enum Theme {
         case .afternoon: (0x0a5636, 0x2e7444)
         case .dusk: (0x053a23, 0x24603a)
         }
-        return [hex.0, hex.1].map { Color(red: Double(($0 >> 16) & 0xff) / 255, green: Double(($0 >> 8) & 0xff) / 255, blue: Double($0 & 0xff) / 255) }
+        return [rgb(hex.0), rgb(hex.1)]
+    }
+
+    /// Split out with explicit types: inline, this took >1 s to type-check and failed CI's compiler time limit.
+    static func rgb(_ hex: UInt32) -> Color {
+        let r: Double = Double((hex >> 16) & 0xff) / 255
+        let g: Double = Double((hex >> 8) & 0xff) / 255
+        let b: Double = Double(hex & 0xff) / 255
+        return Color(red: r, green: g, blue: b)
     }
 
     static func kufi(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font { .custom("Reem Kufi", size: size).weight(weight) }

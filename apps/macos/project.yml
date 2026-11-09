@@ -15,6 +15,8 @@ settings:
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: NO
     MACOSX_DEPLOYMENT_TARGET: "15.0"
+    # Flag slow-to-type-check code locally: CI machines are slower and hit the compiler's hard limit.
+    OTHER_SWIFT_FLAGS: "-Xfrontend -warn-long-expression-type-checking=300"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
 targets:

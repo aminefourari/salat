@@ -9,8 +9,8 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -21,7 +21,7 @@ jobs:
   macos:
     runs-on: macos-26  # pinned: Swift 6 strict concurrency differs across Xcode versions
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: brew install xcodegen
       - run: npm run mac:test
       - name: Show test log on failure
