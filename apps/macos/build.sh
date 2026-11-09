@@ -7,7 +7,7 @@ xcodegen generate --quiet || exit 1
 if [ "$1" = "test" ]; then
   xcodebuild -project Salat.xcodeproj -scheme Salat -derivedDataPath build/dd -destination 'platform=macOS' test > build/test.log 2>&1
   rc=$?
-  grep -E "error:|: error|failed \(|Executed|\*\* TEST" build/test.log | grep -v "^\s*$" | sort -u | tail -40
+  grep -E "error:|: error|failed \(|Executed|\*\* TEST" build/test.log | grep -v "\[Connection\]" | sort -u | tail -40
   exit $rc
 fi
 xcodebuild -project Salat.xcodeproj -scheme Salat -configuration Release -derivedDataPath build/dd build > build/build.log 2>&1
