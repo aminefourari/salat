@@ -17,6 +17,13 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Deploy Worker
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npx wrangler deploy
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   macos:
     runs-on: macos-26  # pinned: Swift 6 strict concurrency differs across Xcode versions
