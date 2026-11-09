@@ -16,12 +16,13 @@ final class QuranPlayer {
     private(set) var bulk: [Int: Int] = [:]
     private(set) var bulkError: [Int: String] = [:]
 
-    let store = RecitationStore.shared
+    let store: RecitationStore
     private let player = AVPlayer()
     private var request = 0
     private var bulkTasks: [Int: Task<Void, Never>] = [:]
 
-    init() {
+    init(store: RecitationStore = .shared) {
+        self.store = store
         player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 10), queue: .main) { [weak self] t in
             MainActor.assumeIsolated { self?.update(t) }
         }
@@ -91,10 +92,12 @@ final class QuranPlayer {
         bulkError[reciter] = nil
         bulkTasks[reciter] = Task {
             do {
-                try await store.downloadAll(reciter: reciter) { done, _ in Task { @MainActor in self.bulk[reciter] = done } }
-            } catch {
+                try await store.downloadAll(reciter: reciter) { done, _ in
+                    Task { @MainActor in if self.bulkTasks[reciter] != nil { self.bulk[reciter] = done } }
+                }
+            } catch where !Self.isCancel(error) {
                 bulkError[reciter] = Self.isOffline(error) ? "offline" : error.localizedDescription
-            }
+            } catch {}
             bulk[reciter] = nil
             bulkTasks[reciter] = nil
         }
@@ -104,9 +107,12 @@ final class QuranPlayer {
 
     func delete(reciter: Int) {
         cancelDownload(reciter: reciter)
+        request += 1 // a play() download for this reciter must not report the deletion as an error
         if self.reciter == reciter { player.replaceCurrentItem(with: nil); state = .idle; isPlaying = false; surah = nil }
         store.delete(reciter: reciter)
     }
+
+    static func isCancel(_ e: Error) -> Bool { e is CancellationError || (e as? URLError)?.code == .cancelled }
 
     static func isOffline(_ e: Error) -> Bool {
         [.notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost, .timedOut, .dataNotAllowed]

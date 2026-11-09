@@ -37,3 +37,20 @@ func dueEvents(days: [DayTimes], modes: [Prayer: AlertMode], reminder: Bool, las
         .filter { $0.at > from && $0.at <= now }
         .map { ($0, now.timeIntervalSince($0.at) > lateWindow) }
 }
+
+/// What the alert loop has handled. The watermark moves to `now` on every step, so changing settings or location
+/// never replays the past; only time without steps (Mac asleep) is caught up, within the 6 h cap.
+struct AlertClock {
+    private(set) var watermark: Date
+
+    /// `saved` is the last persisted watermark: don't replay more than the late window, never trust a future one.
+    init(saved: Date?, now: Date) { watermark = min(max(saved ?? now, now - lateWindow), now) }
+
+    /// Due events since the last step. Reminders that are late, or whose prayer already started, are dropped.
+    mutating func step(days: [DayTimes], modes: [Prayer: AlertMode], reminder: Bool, now: Date) -> [(event: AlertEvent, late: Bool)] {
+        let due = dueEvents(days: days, modes: modes, reminder: reminder, lastHandled: watermark, now: now)
+            .filter { $0.event.kind == .start || (!$0.late && $0.event.prayerTime > now) }
+        watermark = max(watermark, now)
+        return due
+    }
+}

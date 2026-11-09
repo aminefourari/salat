@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// quran.com chapter reciters that publish per-ayah timestamps (needed for read-along).
 struct Reciter: Identifiable, Sendable {
@@ -64,6 +65,8 @@ final class RecitationStore: Sendable {
 
     let root: URL
     private let session: URLSession
+    /// One download per surah at a time: later callers wait for the running one.
+    private let inflight = Mutex<[String: Task<Void, Error>]>([:])
 
     init(root: URL, session: URLSession = .shared) {
         self.root = root
@@ -82,25 +85,43 @@ final class RecitationStore: Sendable {
 
     func download(reciter: Int, surah: Int, progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
         if local(reciter: reciter, surah: surah) != nil { return }
+        let key = "\(reciter)/\(surah)"
+        let task = inflight.withLock { running in
+            if let t = running[key] { return t }
+            let t = Task {
+                defer { _ = self.inflight.withLock { $0.removeValue(forKey: key) } }
+                try await self.fetch(reciter: reciter, surah: surah, progress: progress)
+            }
+            running[key] = t
+            return t
+        }
+        try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+    }
+
+    private func fetch(reciter: Int, surah: Int, progress: @escaping @Sendable (Double) -> Void) async throws {
         let api = URL(string: "https://api.quran.com/api/v4/chapter_recitations/\(reciter)/\(surah)?segments=true")!
         let (data, resp) = try await session.data(from: api)
         try Self.check(resp)
         let rec = try Recitation.decodeAPI(data)
         let d = dir(reciter)
         try FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
-        let tmp = try await downloadFile(rec.audioURL, progress: progress)
+        let (tmp, resp2) = try await session.download(from: rec.audioURL, delegate: ProgressObserver(progress))
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        try Self.check(resp2)
         let mp3 = d.appendingPathComponent("\(surah).mp3")
         try? FileManager.default.removeItem(at: mp3)
         try FileManager.default.moveItem(at: tmp, to: mp3)
         try JSONEncoder().encode(rec.timings).write(to: d.appendingPathComponent("\(surah).json"), options: .atomic)
     }
 
-    /// Downloads every surah not yet on disk, one after another. `progress` gets (surahs done, 114).
+    /// Downloads every surah not yet on disk, one after another. `progress` gets (surahs on disk, 114).
     func downloadAll(reciter: Int, progress: @escaping @Sendable (Int, Int) -> Void) async throws {
-        for s in 1...114 {
+        var done = downloadedCount(reciter: reciter)
+        for s in 1...114 where local(reciter: reciter, surah: s) == nil {
             try Task.checkCancellation()
             try await download(reciter: reciter, surah: s)
-            progress(s, 114)
+            done += 1
+            progress(done, 114)
         }
     }
 
@@ -118,22 +139,14 @@ final class RecitationStore: Sendable {
     private static func check(_ resp: URLResponse) throws {
         if let h = resp as? HTTPURLResponse, !(200..<300).contains(h.statusCode) { throw URLError(.badServerResponse) }
     }
+}
 
-    /// URLSession download with progress; returns a temp file we own.
-    private func downloadFile(_ url: URL, progress: @escaping @Sendable (Double) -> Void) async throws -> URL {
-        try await withCheckedThrowingContinuation { cont in
-            let ownTmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp3")
-            let task = session.downloadTask(with: url) { tmp, resp, err in
-                if let err { return cont.resume(throwing: err) }
-                do {
-                    try Self.check(resp!)
-                    try FileManager.default.moveItem(at: tmp!, to: ownTmp)
-                    cont.resume(returning: ownTmp)
-                } catch { cont.resume(throwing: error) }
-            }
-            let obs = task.progress.observe(\.fractionCompleted) { p, _ in progress(p.fractionCompleted) }
-            objc_setAssociatedObject(task, "obs", obs, .OBJC_ASSOCIATION_RETAIN)
-            task.resume()
-        }
+/// Forwards a download task's progress.
+private final class ProgressObserver: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    let onProgress: @Sendable (Double) -> Void
+    private var observation: NSKeyValueObservation?
+    init(_ onProgress: @escaping @Sendable (Double) -> Void) { self.onProgress = onProgress }
+    func urlSession(_ session: URLSession, didCreateTask task: URLSessionTask) {
+        observation = task.progress.observe(\.fractionCompleted) { [onProgress] p, _ in onProgress(p.fractionCompleted) }
     }
 }

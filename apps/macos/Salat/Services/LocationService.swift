@@ -25,6 +25,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private(set) var location: CLLocation?
     private(set) var status: CLAuthorizationStatus = .notDetermined
+    private(set) var failed = false
     var authorized: Bool { status == .authorizedAlways || status == .authorized }
     var onChange: (() -> Void)?
 
@@ -44,13 +45,16 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         guard let l = locs.last else { return }
         Task { @MainActor in
             // Ignore moves under ~5 km, like the web app: same city, same times.
+            self.failed = false
             if let old = self.location, old.distance(from: l) < 5_000 { return }
             self.location = l
             self.onChange?()
         }
     }
 
-    nonisolated func locationManager(_ m: CLLocationManager, didFailWithError error: Error) {}
+    nonisolated func locationManager(_ m: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor in self.failed = true; self.onChange?() }
+    }
 
     nonisolated func locationManagerDidChangeAuthorization(_ m: CLLocationManager) {
         let s = m.authorizationStatus

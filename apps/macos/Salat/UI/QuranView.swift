@@ -24,7 +24,9 @@ struct QuranView: View {
                     Text(s.n.formatted(.number.locale(lang.locale))).monospacedDigit().foregroundStyle(.secondary).frame(width: 30)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(s.ar).font(.custom(quranFont, size: 18))
-                        if lang != .ar { Text(s.en).font(.caption).foregroundStyle(.secondary) }
+                        Text(lang == .ar ? t(.ayahCount, lang, ["n": s.ayahs.count.formatted(.number.locale(lang.locale))])
+                                         : "\(s.en) · \(t(.ayahCount, lang, ["n": String(s.ayahs.count)]))")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
                     if player.surah == s.n, player.isPlaying { Image(systemName: "speaker.wave.2.fill").foregroundStyle(.tint) }
@@ -173,7 +175,7 @@ struct QuranSettingsTab: View {
                         Spacer()
                         if player.bulk[r.id] != nil {
                             ProgressView(value: Double(count), total: 114).frame(width: 80)
-                            Button(t(.alertOff, lang), systemImage: "xmark.circle") { player.cancelDownload(reciter: r.id) }.labelStyle(.iconOnly)
+                            Button(t(.cancel, lang), systemImage: "xmark.circle") { player.cancelDownload(reciter: r.id) }.labelStyle(.iconOnly)
                         } else if count < 114 {
                             Button(t(.downloadAll, lang)) { player.downloadAll(reciter: r.id) }
                         }

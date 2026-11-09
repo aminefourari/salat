@@ -51,6 +51,7 @@ targets:
       - path: Salat/Services/LocationService.swift
       - path: Salat/Quran/QuranText.swift
       - path: Salat/Quran/Recitations.swift
+      - path: Salat/Quran/QuranPlayer.swift
       - path: Salat/Resources/borders.json
         buildPhase: resources
       - path: Salat/Resources/cities.txt

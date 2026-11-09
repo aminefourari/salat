@@ -26,13 +26,13 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private var locKey: LocKey?
     private var country: String?
     private var timer: Timer?
+    private var clock: AlertClock
 
     init(settings: AppSettings, location: LocationService) {
         self.settings = settings
         self.location = location
+        clock = AlertClock(saved: settings.d.lastAlertHandled, now: Date())
         super.init()
-        // Don't replay what happened while the app wasn't running, beyond the late window.
-        settings.d.lastAlertHandled = max(settings.d.lastAlertHandled ?? .distantPast, Date() - lateWindow)
         location.onChange = { [weak self] in self?.tick() }
         location.requestOnce()
         setUpNotifications()
@@ -56,7 +56,11 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
             country = loc.flatMap { CountryLookup.shared.code(lat: $0.lat, lon: $0.lon) }
             if let l = loc, l.source == .gps, l != s.lastKnown { settings.d.lastKnown = l }
         }
-        guard let loc else { today = nil; tomorrow = nil; return }
+        guard let loc else {
+            today = nil; tomorrow = nil
+            _ = clock.step(days: [], modes: [:], reminder: false, now: now)
+            return
+        }
         method = s.method ?? methodForCountry(country)
         let cal = Calendar.autoupdatingCurrent
         let days = (-1...1).map { off in
@@ -64,10 +68,9 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
                        method: method, asr: s.asr)
         }
         today = days[1]; tomorrow = days[2]
-        let due = dueEvents(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder,
-                            lastHandled: s.lastAlertHandled ?? now, now: now)
+        let due = clock.step(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder, now: now)
         guard !due.isEmpty else { return }
-        settings.d.lastAlertHandled = now
+        settings.d.lastAlertHandled = now // persisted so a relaunch doesn't replay these
         for (e, late) in due { fire(e, late: late) }
     }
 

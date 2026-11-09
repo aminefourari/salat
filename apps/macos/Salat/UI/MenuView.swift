@@ -52,7 +52,8 @@ struct MenuView: View {
                     Text(t(.approximate, lang)).font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             } else {
-                Text(engine.location.authorized || engine.location.status == .notDetermined ? t(.locating, lang) : t(.noLocation, lang))
+                let waiting = (engine.location.authorized || engine.location.status == .notDetermined) && !engine.location.failed
+                Text(waiting ? t(.locating, lang) : t(.noLocation, lang))
                     .fixedSize(horizontal: false, vertical: true)
             }
             if engine.player.isPlaying {
