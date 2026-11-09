@@ -1,0 +1,91 @@
+name: Salat
+options:
+  bundleIdPrefix: local.salat
+  deploymentTarget:
+    macOS: "15.0"
+packages:
+  Adhan:
+    url: https://github.com/batoulapps/adhan-swift
+    from: 1.5.0
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    # Flag slow-to-type-check code locally: CI machines are slower and hit the compiler's hard limit.
+    OTHER_SWIFT_FLAGS: "-Xfrontend -warn-long-expression-type-checking=300"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Salat:
+    type: application
+    platform: macOS
+    sources:
+      - path: Salat
+      # Shared with the website (repo-root data/).
+      - path: ../../data/quran.json
+        buildPhase: resources
+      - path: ../../data/adhkar.json
+        buildPhase: resources
+    dependencies:
+      - package: Adhan
+    info:
+      path: Salat/Info.plist
+      properties:
+        CFBundleDisplayName: Salat
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.lifestyle
+        NSLocationUsageDescription: Salat uses your location to calculate prayer times.
+        NSLocationWhenInUseUsageDescription: Salat uses your location to calculate prayer times.
+        ATSApplicationFontsPath: .
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.salat.mac
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  SalatTests:
+    type: bundle.unit-test
+    platform: macOS
+    # Logic tests: compile the app's pure code straight in, so no app launch (and no permission prompts).
+    sources:
+      - path: SalatTests
+        excludes: ["*.json"]
+      - path: SalatTests/fatiha-7.json
+        buildPhase: resources
+      - path: Salat/Core
+      - path: Salat/Services/LocationService.swift
+      - path: Salat/Services/AdhanStore.swift
+      - path: Salat/Resources/adhans/hassan2.m4a
+        buildPhase: resources
+      - path: Salat/Quran/QuranText.swift
+      - path: Salat/Quran/Recitations.swift
+      - path: Salat/Quran/QuranPlayer.swift
+      - path: Salat/Adhkar/Adhkar.swift
+      - path: ../../data/adhkar.json
+        buildPhase: resources
+      - path: Salat/Resources/borders.json
+        buildPhase: resources
+      - path: Salat/Resources/cities.txt
+        buildPhase: resources
+      - path: ../../fixtures/parity.json
+        buildPhase: resources
+      - path: ../../data/quran.json
+        buildPhase: resources
+    dependencies:
+      - package: Adhan
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Salat:
+    build:
+      targets:
+        Salat: all
+        SalatTests: [test]
+    test:
+      targets: [SalatTests]

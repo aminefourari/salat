@@ -1,43 +1,14 @@
 {
-  "name": "salat",
+  "name": "salat-monorepo",
   "private": true,
-  "type": "module",
-  "imports": {
-    "#/*": "./src/*"
-  },
+  "workspaces": ["apps/web"],
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "generate-routes": "tsr generate",
-    "build": "vite build",
-    "preview": "npm run build && vite preview",
-    "deploy": "npm run build && wrangler deploy",
-    "cf-typegen": "wrangler types",
-    "test": "vitest run",
-    "db:migrate": "wrangler d1 migrations apply salat --remote"
-  },
-  "dependencies": {
-    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
-    "@fontsource/reem-kufi": "^5.3.0",
-    "@pushforge/builder": "^2.0.5",
-    "@rapideditor/country-coder": "^5.6.1",
-    "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/react-router": "1.170.46",
-    "@tanstack/react-start": "1.169.5",
-    "adhan": "^4.4.3",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "tailwindcss": "^4.1.18"
-  },
-  "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.26.0",
-    "@tanstack/router-cli": "^1.132.0",
-    "@types/node": "^22.20.5",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.0",
-    "vitest": "^3.2.7",
-    "wrangler": "^4.158.0"
+    "dev": "npm run dev -w apps/web",
+    "test": "npm test -w apps/web",
+    "build": "npm run build -w apps/web",
+    "deploy": "npm run deploy -w apps/web",
+    "db:migrate": "npm run db:migrate -w apps/web",
+    "mac:build": "apps/macos/build.sh",
+    "mac:test": "apps/macos/build.sh test"
   }
 }
