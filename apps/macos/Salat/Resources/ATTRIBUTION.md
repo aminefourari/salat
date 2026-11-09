@@ -2,6 +2,11 @@
 
 - `quran.json`: Uthmani text and surah names from [quran.com](https://quran.com) (api.quran.com/api/v4).
 - `AmiriQuran-Regular.ttf`: Amiri Quran by Khaled Hosny, SIL Open Font License 1.1 (`AmiriQuran-OFL.txt`).
+- `Amiri-Regular.ttf`: Amiri by Khaled Hosny, SIL Open Font License 1.1 (`Amiri-OFL.txt`).
+- `adhkar.json`: Hisn al-Muslim (حصن المسلم) by Sa'id ibn Wahf al-Qahtani, merged by `scripts/fetch-adhkar.py` from
+  - [hisnmuslim.com](https://www.hisnmuslim.com): Arabic text, English translation, repetitions, audio (streamed on demand)
+  - [La Citadelle du Musulman, AR-FR](https://github.com/Kiwifu/la-citadelle-du-musulman), edited by Badr B. from the Midad app «حصن المسلم»: French translation and references
+  - The book is distributed free: «الكتاب مجاني وغير مسموح ببيعه» (free, not for sale). Salat is and stays free. Ask both sources for permission before any public release.
 - `borders.json`: country borders from [country-coder](https://github.com/rapideditor/country-coder) (ISC), exported by `apps/web/test/mac-data.test.ts`.
 - `cities.txt`: [GeoNames](https://www.geonames.org) cities5000, CC BY 4.0.
 - Adhans (Wikimedia Commons, converted to mono AAC):
