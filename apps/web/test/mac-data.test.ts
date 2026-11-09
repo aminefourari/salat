@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import aachen from './fixtures/aachen-2026.json'
 import cities from '../src/server/cities.data'
 import { METHOD_IDS, type MethodId } from '../src/lib/methods'
-import { computeDay, formatHM, resolveMethod, type Settings } from '../src/lib/prayer'
+import { computeDay, resolveMethod, type Settings } from '../src/lib/prayer'
 
 const root = new URL('../../../', import.meta.url)
 const res = new URL('apps/macos/Salat/Resources/', root)
@@ -32,7 +32,8 @@ function prayerCases() {
         for (const asr of ['standard', 'hanafi'] as const) {
           const s: Settings = { method, asr, lang: 'en' }
           const d = computeDay(lat, lon, date, tz, s)
-          const times = Object.fromEntries(KEYS.map(k => [k, formatHM(d[k], tz)]))
+          // Unix minutes, not local HH:mm: the two apps' time-zone databases can differ (e.g. Morocco's offset).
+          const times = Object.fromEntries(KEYS.map(k => [k, Math.floor(d[k].getTime() / 60_000)]))
           out.push({ lat, lon, date, tz, method: resolveMethod(lat, lon, s) as MethodId, asr, times })
         }
   return out
