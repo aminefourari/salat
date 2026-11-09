@@ -44,6 +44,9 @@ targets:
     # Logic tests: compile the app's pure code straight in, so no app launch (and no permission prompts).
     sources:
       - path: SalatTests
+        excludes: ["*.json"]
+      - path: SalatTests/fatiha-7.json
+        buildPhase: resources
       - path: Salat/Core
       - path: Salat/Services/LocationService.swift
       - path: Salat/Quran/QuranText.swift
@@ -53,6 +56,8 @@ targets:
       - path: Salat/Resources/cities.txt
         buildPhase: resources
       - path: ../../fixtures/parity.json
+        buildPhase: resources
+      - path: Salat/Resources/quran.json
         buildPhase: resources
     dependencies:
       - package: Adhan
