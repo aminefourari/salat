@@ -65,8 +65,7 @@ final class RecitationStore: Sendable {
 
     let root: URL
     private let session: URLSession
-    /// One download per surah at a time: later callers wait for the running one.
-    private let inflight = Mutex<[String: Task<Void, Error>]>([:])
+    private let downloads = SharedDownloads()
 
     init(root: URL, session: URLSession = .shared) {
         self.root = root
@@ -85,17 +84,7 @@ final class RecitationStore: Sendable {
 
     func download(reciter: Int, surah: Int, progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
         if local(reciter: reciter, surah: surah) != nil { return }
-        let key = "\(reciter)/\(surah)"
-        let task = inflight.withLock { running in
-            if let t = running[key] { return t }
-            let t = Task {
-                defer { _ = self.inflight.withLock { $0.removeValue(forKey: key) } }
-                try await self.fetch(reciter: reciter, surah: surah, progress: progress)
-            }
-            running[key] = t
-            return t
-        }
-        try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        try await downloads.run("\(reciter)/\(surah)") { try await self.fetch(reciter: reciter, surah: surah, progress: progress) }
     }
 
     private func fetch(reciter: Int, surah: Int, progress: @escaping @Sendable (Double) -> Void) async throws {
@@ -105,12 +94,7 @@ final class RecitationStore: Sendable {
         let rec = try Recitation.decodeAPI(data)
         let d = dir(reciter)
         try FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
-        let (tmp, resp2) = try await session.download(from: rec.audioURL, delegate: ProgressObserver(progress))
-        defer { try? FileManager.default.removeItem(at: tmp) }
-        try Self.check(resp2)
-        let mp3 = d.appendingPathComponent("\(surah).mp3")
-        try? FileManager.default.removeItem(at: mp3)
-        try FileManager.default.moveItem(at: tmp, to: mp3)
+        try await session.downloadAtomically(rec.audioURL, to: d.appendingPathComponent("\(surah).mp3"), progress: progress)
         try JSONEncoder().encode(rec.timings).write(to: d.appendingPathComponent("\(surah).json"), options: .atomic)
     }
 
@@ -136,7 +120,7 @@ final class RecitationStore: Sendable {
 
     func delete(reciter: Int) { try? FileManager.default.removeItem(at: dir(reciter)) }
 
-    private static func check(_ resp: URLResponse) throws {
+    fileprivate static func check(_ resp: URLResponse) throws {
         if let h = resp as? HTTPURLResponse, !(200..<300).contains(h.statusCode) { throw URLError(.badServerResponse) }
     }
 }
@@ -148,5 +132,34 @@ private final class ProgressObserver: NSObject, URLSessionTaskDelegate, @uncheck
     init(_ onProgress: @escaping @Sendable (Double) -> Void) { self.onProgress = onProgress }
     func urlSession(_ session: URLSession, didCreateTask task: URLSessionTask) {
         observation = task.progress.observe(\.fractionCompleted) { [onProgress] p, _ in onProgress(p.fractionCompleted) }
+    }
+}
+
+/// One download per key at a time: later callers wait for the running one; cancelling a caller cancels it.
+final class SharedDownloads: Sendable {
+    private let inflight = Mutex<[String: Task<Void, Error>]>([:])
+
+    func run(_ key: String, _ work: @escaping @Sendable () async throws -> Void) async throws {
+        let task = inflight.withLock { running in
+            if let t = running[key] { return t }
+            let t = Task {
+                defer { _ = self.inflight.withLock { $0.removeValue(forKey: key) } }
+                try await work()
+            }
+            running[key] = t
+            return t
+        }
+        try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+    }
+}
+
+extension URLSession {
+    /// Downloads `url` and moves it into `dest` in one step, so a half file never sits at `dest`.
+    func downloadAtomically(_ url: URL, to dest: URL, progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
+        let (tmp, resp) = try await download(from: url, delegate: ProgressObserver(progress))
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        try RecitationStore.check(resp)
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.moveItem(at: tmp, to: dest)
     }
 }

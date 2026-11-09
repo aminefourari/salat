@@ -50,7 +50,7 @@ def score(a_raw, b_raw):
     return difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
 
 
-COUNT_RE = re.compile('مرة|مرات|مرّات|مَرَّات|مائة|مئة|ثلاثا|سبعا|عشر')
+COUNT_RE = re.compile('مره|مرات|مايه|ميه|ثلاثا|سبعا|عشر')  # norm() maps ئ→ي, ة→ه;  # matched against norm(text)
 
 
 def parse_fr(md):
@@ -125,7 +125,7 @@ def main(out):
                 'fr': f['fr'] if ok else None,
                 'ref': f['ref'] if ok else None,
                 'repeat': int(a.get('REPEAT') or 1),
-                'count_in_text': bool(COUNT_RE.search(a['ARABIC_TEXT'])),
+                'count_in_text': bool(COUNT_RE.search(norm(a['ARABIC_TEXT']))),
                 'audio': audio,
             })
         result.append({'id': cid, 'ar': ch['TITLE'].strip(), 'en': (en_ch or {}).get('TITLE', ch['TITLE']).strip(),
