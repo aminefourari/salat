@@ -19,6 +19,7 @@ struct AdhanVoice: Identifiable, Sendable {
 final class AdhanPlayer: NSObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
     private(set) var isPlaying = false
+    var onPlay: (() -> Void)?
 
     func play(_ id: String) {
         stop()
@@ -27,6 +28,7 @@ final class AdhanPlayer: NSObject, AVAudioPlayerDelegate {
         p.delegate = self
         player = p
         isPlaying = p.play()
+        onPlay?()
     }
 
     func stop() {

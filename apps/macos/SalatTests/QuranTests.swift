@@ -59,3 +59,17 @@ final class RecitationStoreTests: XCTestCase {
         XCTAssertEqual(Reciter.all.map(\.id), [7, 3, 10, 6, 2, 9, 97, 4])
     }
 }
+
+/// Hits quran.com for real; run with TEST_RUNNER_SALAT_LIVE=1 npm run mac:test (xcodebuild strips the prefix).
+final class LiveDownloadTests: XCTestCase {
+    func testDownloadsFatiha() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SALAT_LIVE"] != nil)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let s = RecitationStore(root: root)
+        try await s.download(reciter: 7, surah: 1)
+        let l = try XCTUnwrap(s.local(reciter: 7, surah: 1))
+        XCTAssertEqual(l.timings.count, 7)
+        XCTAssertGreaterThan(s.size(reciter: 7), 500_000)
+    }
+}

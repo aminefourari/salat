@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     let engine: AlertEngine
+    let quran: QuranPlayer
     var settings: AppSettings { engine.settings }
     var lang: Lang { settings.d.lang }
 
@@ -11,7 +12,7 @@ struct SettingsView: View {
             Tab(t(.general, lang), systemImage: "gearshape") { GeneralTab(settings: settings) }
             Tab(t(.prayerTimes, lang), systemImage: "clock") { PrayerTab(engine: engine) }
             Tab(t(.alerts, lang), systemImage: "speaker.wave.2") { AlertsTab(engine: engine) }
-            Tab(t(.quran, lang), systemImage: "book") { QuranSettingsTab(settings: settings) }
+            Tab(t(.quran, lang), systemImage: "book") { QuranSettingsTab(settings: settings, player: quran) }
             Tab(t(.qibla, lang), systemImage: "location.north.line") { QiblaTab(engine: engine) }
         }
         .frame(width: 520, height: 420)
