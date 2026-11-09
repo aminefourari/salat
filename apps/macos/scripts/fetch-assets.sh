@@ -3,13 +3,14 @@
 # Outputs are committed; run only to refresh them. Needs curl, python3, ffmpeg.
 set -e
 R="$(cd "$(dirname "$0")/.." && pwd)/Salat/Resources"
+DATA="$(cd "$(dirname "$0")/../../.." && pwd)/data"  # shared with the website
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 mkdir -p "$R/adhans"
 
 # Quran text (Uthmani) + surah names, from quran.com.
 curl -sf https://api.quran.com/api/v4/chapters -o "$T/chapters.json"
 curl -sf https://api.quran.com/api/v4/quran/verses/uthmani -o "$T/verses.json"
-python3 -I - "$T/chapters.json" "$T/verses.json" "$R/quran.json" <<'PY'
+python3 -I - "$T/chapters.json" "$T/verses.json" "$DATA/quran.json" <<'PY'
 import json, sys
 ch = json.load(open(sys.argv[1]))['chapters']
 vs = json.load(open(sys.argv[2]))['verses']
@@ -35,7 +36,7 @@ done
 curl -sfL https://github.com/google/fonts/raw/main/ofl/ibmplexsansarabic/OFL.txt -o "$R/IBMPlexSansArabic-OFL.txt"
 
 # Adhkar (Hisn al-Muslim): merged text, see fetch-adhkar.py for the pairing report.
-python3 -I "$(dirname "$0")/fetch-adhkar.py" "$R/adhkar.json"
+python3 -I "$(dirname "$0")/fetch-adhkar.py" "$DATA/adhkar.json"
 
 # Adhans from Wikimedia Commons → mono AAC.
 adhan() { # id url
@@ -50,12 +51,12 @@ adhan azan "https://upload.wikimedia.org/wikipedia/commons/8/86/Azan.ogg"
 cat > "$R/ATTRIBUTION.md" <<'MD'
 # Bundled assets
 
-- `quran.json`: Uthmani text and surah names from [quran.com](https://quran.com) (api.quran.com/api/v4).
+- `data/quran.json` (repo root, shared with the website): Uthmani text and surah names from [quran.com](https://quran.com) (api.quran.com/api/v4).
 - `AmiriQuran-Regular.ttf`: Amiri Quran by Khaled Hosny, SIL Open Font License 1.1 (`AmiriQuran-OFL.txt`).
 - `Amiri-Regular.ttf`: Amiri by Khaled Hosny, SIL Open Font License 1.1 (`Amiri-OFL.txt`).
 - `ReemKufi.ttf`: Reem Kufi by Khaled Hosny, SIL Open Font License 1.1 (`ReemKufi-OFL.txt`).
 - `IBMPlexSansArabic-*.ttf`: IBM Plex Sans Arabic by IBM, SIL Open Font License 1.1 (`IBMPlexSansArabic-OFL.txt`).
-- `adhkar.json`: Hisn al-Muslim (حصن المسلم) by Sa'id ibn Wahf al-Qahtani, merged by `scripts/fetch-adhkar.py` from
+- `data/adhkar.json` (repo root, shared with the website): Hisn al-Muslim (حصن المسلم) by Sa'id ibn Wahf al-Qahtani, merged by `scripts/fetch-adhkar.py` from
   - [hisnmuslim.com](https://www.hisnmuslim.com): Arabic text, English translation, repetitions, audio (streamed on demand)
   - [La Citadelle du Musulman, AR-FR](https://github.com/Kiwifu/la-citadelle-du-musulman), edited by Badr B. from the Midad app «حصن المسلم»: French translation and references
   - The book is distributed free: «الكتاب مجاني وغير مسموح ببيعه» (free, not for sale). Salat is and stays free. Ask both sources for permission before any public release.

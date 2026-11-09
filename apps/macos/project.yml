@@ -23,6 +23,11 @@ targets:
     platform: macOS
     sources:
       - path: Salat
+      # Shared with the website (repo-root data/).
+      - path: ../../data/quran.json
+        buildPhase: resources
+      - path: ../../data/adhkar.json
+        buildPhase: resources
     dependencies:
       - package: Adhan
     info:
@@ -56,7 +61,7 @@ targets:
       - path: Salat/Quran/Recitations.swift
       - path: Salat/Quran/QuranPlayer.swift
       - path: Salat/Adhkar/Adhkar.swift
-      - path: Salat/Resources/adhkar.json
+      - path: ../../data/adhkar.json
         buildPhase: resources
       - path: Salat/Resources/borders.json
         buildPhase: resources
@@ -64,7 +69,7 @@ targets:
         buildPhase: resources
       - path: ../../fixtures/parity.json
         buildPhase: resources
-      - path: Salat/Resources/quran.json
+      - path: ../../data/quran.json
         buildPhase: resources
     dependencies:
       - package: Adhan
