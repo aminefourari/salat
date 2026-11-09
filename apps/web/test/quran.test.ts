@@ -3,6 +3,7 @@ import quran from '../../../data/quran.json'
 import adhkar from '../../../data/adhkar.json'
 import { ayahIndex, parseRecitation, RECITERS, recitationApi } from '../src/lib/quran'
 import { badge, chapterTitle, translation, type Chapter } from '../src/lib/adhkar'
+import { memoLoad } from '../src/lib/load'
 
 describe('quran', () => {
   it('bundled text is complete', () => {
@@ -56,5 +57,16 @@ describe('adhkar', () => {
     expect(chapterTitle(c, 'fr')).toBe('Évocations du matin et du soir')
     expect(chapterTitle({ ...c, fr: null }, 'fr')).toBe(c.en)
     expect(chapterTitle(c, 'ar')).toBe(c.ar)
+  })
+})
+
+describe('memoLoad', () => {
+  it('shares one load, and retries after a failure', async () => {
+    let calls = 0
+    const load = memoLoad(async () => { calls++; if (calls === 1) throw new Error('offline'); return calls })
+    await expect(load()).rejects.toThrow('offline')
+    expect(await load()).toBe(2)
+    expect(await load()).toBe(2)
+    expect(calls).toBe(2)
   })
 })

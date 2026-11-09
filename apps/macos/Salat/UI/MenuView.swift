@@ -121,7 +121,7 @@ struct MenuView: View {
             + Prayer.allCases.dropFirst().map { ($0.rawValue, prayerName($0, lang), d[$0]) }
     }
 
-    private func keyName(_ key: String, _ l: Lang) -> String { t(L10nKey(rawValue: key)!, l) }
+    private func keyName(_ key: String, _ l: Lang) -> String { L10nKey(rawValue: key).map { t($0, l) } ?? key }
 
     /// "H:MM:SS" like the website's countdown.
     private func clock(_ s: TimeInterval) -> String {
@@ -139,7 +139,6 @@ struct MenuView: View {
 /// Gold gradient progress bar (website `.hero-progress`).
 struct ProgressBar: View {
     let value: Double
-    @Environment(\.layoutDirection) private var dir
     var body: some View {
         GeometryReader { g in
             ZStack(alignment: .leading) {

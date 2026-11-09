@@ -224,7 +224,7 @@ select {
 .btn.play { width: 2.6rem; height: 2.6rem; padding: 0; flex: none; }
 .mushaf { display: grid; gap: .25rem; }
 .bismillah { text-align: center; font: 400 1.7rem/2 'Amiri Quran', serif; color: var(--gold); margin: 0 0 .5rem; }
-.ayah { margin: 0; }
+.ayah { margin: 0; scroll-margin-top: 5rem; } /* clear the sticky player */
 .ayah button {
   display: block; width: 100%; text-align: start; background: none; border: 1px solid transparent; cursor: pointer;
   padding: .6rem .8rem; border-radius: 1rem; font: 400 1.65rem/2.3 'Amiri Quran', serif; color: var(--ink);

@@ -28,7 +28,7 @@ const en = {
   'm.ummalqura': 'Umm al-Qura (Makkah)', 'm.uoif': 'UOIF (France)', 'm.isna': 'ISNA (North America)',
   'm.egyptian': 'Egyptian Authority', 'm.karachi': 'Karachi', 'm.dubai': 'Dubai', 'm.kuwait': 'Kuwait',
   'm.qatar': 'Qatar', 'm.singapore': 'Singapore / Malaysia / Indonesia', 'm.turkey': 'Diyanet (Turkey)', 'm.tehran': 'Tehran',
-  quran: 'Quran', adhkar: 'Adhkar', reciter: 'Reciter', play: 'Play', pause: 'Pause', search: 'Search',
+  loadFailed: "Couldn't load. Check your connection.", quran: 'Quran', adhkar: 'Adhkar', reciter: 'Reciter', play: 'Play', pause: 'Pause', search: 'Search',
   ayahs: '{n} ayahs', allSurahs: 'All surahs', allCategories: 'All categories', loading: 'Loading…',
   audioError: "Couldn't load the recitation. Check your connection and try again.", defaultReciter: 'Quran reciter',
 }
@@ -61,7 +61,7 @@ const fr: Record<Key, string> = {
   'm.ummalqura': 'Umm al-Qura (La Mecque)', 'm.uoif': 'UOIF (France)', 'm.isna': 'ISNA (Amérique du Nord)',
   'm.egyptian': 'Autorité égyptienne', 'm.karachi': 'Karachi', 'm.dubai': 'Dubaï', 'm.kuwait': 'Koweït',
   'm.qatar': 'Qatar', 'm.singapore': 'Singapour / Malaisie / Indonésie', 'm.turkey': 'Diyanet (Turquie)', 'm.tehran': 'Téhéran',
-  quran: 'Coran', adhkar: 'Adhkar', reciter: 'Récitateur', play: 'Lecture', pause: 'Pause', search: 'Rechercher',
+  loadFailed: 'Chargement impossible. Vérifiez votre connexion.', quran: 'Coran', adhkar: 'Adhkar', reciter: 'Récitateur', play: 'Lecture', pause: 'Pause', search: 'Rechercher',
   ayahs: '{n} versets', allSurahs: 'Toutes les sourates', allCategories: 'Toutes les catégories', loading: 'Chargement…',
   audioError: 'Impossible de charger la récitation. Vérifiez votre connexion et réessayez.', defaultReciter: 'Récitateur du Coran',
 }
@@ -93,7 +93,7 @@ const ar: Record<Key, string> = {
   'm.ummalqura': 'أم القرى (مكة)', 'm.uoif': 'اتحاد المنظمات الإسلامية (فرنسا)', 'm.isna': 'الجمعية الإسلامية لأمريكا الشمالية',
   'm.egyptian': 'الهيئة المصرية', 'm.karachi': 'كراتشي', 'm.dubai': 'دبي', 'm.kuwait': 'الكويت',
   'm.qatar': 'قطر', 'm.singapore': 'سنغافورة / ماليزيا / إندونيسيا', 'm.turkey': 'ديانت (تركيا)', 'm.tehran': 'طهران',
-  quran: 'القرآن', adhkar: 'الأذكار', reciter: 'القارئ', play: 'تشغيل', pause: 'إيقاف مؤقت', search: 'بحث',
+  loadFailed: 'تعذّر التحميل. تحقق من اتصالك.', quran: 'القرآن', adhkar: 'الأذكار', reciter: 'القارئ', play: 'تشغيل', pause: 'إيقاف مؤقت', search: 'بحث',
   ayahs: '{n} آية', allSurahs: 'كل السور', allCategories: 'كل الأبواب', loading: 'جارٍ التحميل…',
   audioError: 'تعذّر تحميل التلاوة. تحقق من اتصالك وأعد المحاولة.', defaultReciter: 'قارئ القرآن',
 }

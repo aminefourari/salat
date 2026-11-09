@@ -178,9 +178,11 @@ export type ReadPrefs = { reciter: number; surah: number; ayah: number; adhkar: 
 const DEFAULT_READ: ReadPrefs = { reciter: 7, surah: 1, ayah: 1, adhkar: 27 }
 export const useReadPrefs = () => useStored<ReadPrefs>('salat.read', DEFAULT_READ, DEFAULT_READ)
 
-/** Loads `load()` once per page lifetime (the bundled Quran/adhkar JSON). */
-export function useLazy<T>(load: () => Promise<T>): T | null {
-  const [v, setV] = useState<T | null>(null)
-  useEffect(() => { load().then(setV, () => {}) }, [load])
-  return v
+/** Runs a memoised `load()` (see lib/load.ts); `failed` + `retry` for when it couldn't (offline). */
+export function useLazy<T>(load: () => Promise<T>): { data: T | null; failed: boolean; retry: () => void } {
+  const [data, setData] = useState<T | null>(null)
+  const [failed, setFailed] = useState(false)
+  const run = useCallback(() => { setFailed(false); load().then(setData, () => setFailed(true)) }, [load])
+  useEffect(run, [run])
+  return { data, failed, retry: run }
 }

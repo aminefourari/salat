@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import adhkarUrl from '../../../../data/adhkar.json?url'
 import { badge, chapterTitle, translation, type Chapter } from '../lib/adhkar'
 import { useLazy, useReadPrefs, useSettings } from '../lib/client'
+import { fetchJson, memoLoad } from '../lib/load'
 import { t } from '../lib/i18n'
 import type { Lang } from '../lib/prayer'
 
@@ -11,13 +12,13 @@ export const Route = createFileRoute('/adhkar')({
   component: AdhkarPage,
 })
 
-let adhkar: Promise<Chapter[]> | undefined
-const loadAdhkar = () => (adhkar ??= fetch(adhkarUrl).then(r => r.json()))
+const loadAdhkar = memoLoad(() => fetchJson<Chapter[]>(adhkarUrl))
 
 function AdhkarPage() {
   const { c } = Route.useSearch()
   const [{ lang }] = useSettings()
-  const chapters = useLazy(loadAdhkar)
+  const { data: chapters, failed, retry } = useLazy(loadAdhkar)
+  if (failed) return <div className="panel" role="alert"><p>{t(lang, 'loadFailed')}</p><button className="btn" onClick={retry}>{t(lang, 'retry')}</button></div>
   if (!chapters) return <p className="loading">{t(lang, 'loading')}</p>
   const chapter = c ? chapters.find(x => x.id === c) : undefined
   return chapter ? <ChapterView chapter={chapter} lang={lang} /> : <ChapterList chapters={chapters} lang={lang} />
@@ -60,7 +61,8 @@ function ChapterView({ chapter, lang }: { chapter: Chapter; lang: Lang }) {
     if (playing === id) { a.pause(); return }
     setFailed(null)
     a.src = url
-    try { await a.play(); setPlaying(id) } catch { setFailed(id); setPlaying(null) }
+    // Switching dhikr mid-buffer aborts the previous play(): that's not a failure.
+    try { await a.play(); setPlaying(id) } catch (e) { if ((e as Error)?.name !== 'AbortError') { setFailed(id); setPlaying(null) } }
   }
 
   return (
