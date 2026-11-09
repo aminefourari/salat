@@ -3,6 +3,8 @@
 - `quran.json`: Uthmani text and surah names from [quran.com](https://quran.com) (api.quran.com/api/v4).
 - `AmiriQuran-Regular.ttf`: Amiri Quran by Khaled Hosny, SIL Open Font License 1.1 (`AmiriQuran-OFL.txt`).
 - `Amiri-Regular.ttf`: Amiri by Khaled Hosny, SIL Open Font License 1.1 (`Amiri-OFL.txt`).
+- `ReemKufi.ttf`: Reem Kufi by Khaled Hosny, SIL Open Font License 1.1 (`ReemKufi-OFL.txt`).
+- `IBMPlexSansArabic-*.ttf`: IBM Plex Sans Arabic by IBM, SIL Open Font License 1.1 (`IBMPlexSansArabic-OFL.txt`).
 - `adhkar.json`: Hisn al-Muslim (حصن المسلم) by Sa'id ibn Wahf al-Qahtani, merged by `scripts/fetch-adhkar.py` from
   - [hisnmuslim.com](https://www.hisnmuslim.com): Arabic text, English translation, repetitions, audio (streamed on demand)
   - [La Citadelle du Musulman, AR-FR](https://github.com/Kiwifu/la-citadelle-du-musulman), edited by Badr B. from the Midad app «حصن المسلم»: French translation and references

@@ -18,17 +18,25 @@ struct AdhkarView: View {
     var body: some View {
         NavigationSplitView {
             List(chapters, selection: $selection) { c in
-                Text(c.title(lang)).lineLimit(2).tag(c.id)
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkle").font(.system(size: 9)).foregroundStyle(Theme.gold)
+                    Text(c.title(lang)).font(Theme.plex(13)).lineLimit(2)
+                }
+                .padding(.vertical, 3)
+                .tag(c.id)
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.panelStrong)
             .searchable(text: $query, placement: .sidebar, prompt: t(.searchCategory, lang))
-            .navigationSplitViewColumnWidth(min: 220, ideal: 280)
+            .navigationSplitViewColumnWidth(min: 240, ideal: 300)
         } detail: {
             if let id = selection, let c = AdhkarText.chapters.first(where: { $0.id == id }) {
-                ChapterView(chapter: c, lang: lang, player: player).id(id)
+                AdhkarChapterView(chapter: c, lang: lang, player: player).id(id)
             } else {
-                Text(t(.chooseCategory, lang)).foregroundStyle(.secondary)
+                Text(t(.chooseCategory, lang)).font(Theme.kufi(22)).foregroundStyle(Theme.soft)
             }
         }
+        .themedWindow()
         .navigationTitle(t(.adhkar, lang))
         .onAppear { if selection == nil { selection = settings.d.lastAdhkarChapter ?? AdhkarText.chapters.first?.id } }
         .onChange(of: selection) { _, id in if let id { settings.d.lastAdhkarChapter = id } }
@@ -36,7 +44,7 @@ struct AdhkarView: View {
     }
 }
 
-private struct ChapterView: View {
+struct AdhkarChapterView: View {
     let chapter: AdhkarChapter
     let lang: Lang
     let player: AdhkarPlayer
@@ -44,8 +52,8 @@ private struct ChapterView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(chapter.title(lang)).font(.title2.bold())
-                if lang != .ar { Text(chapter.ar).font(.custom("Amiri", size: 20)).foregroundStyle(.secondary) }
+                Text(chapter.title(lang)).font(Theme.kufi(26))
+                if lang != .ar { Text(chapter.ar).font(.custom("Amiri", size: 20)).foregroundStyle(Theme.gold) }
                 ForEach(chapter.items) { d in DhikrCard(d: d, lang: lang, player: player) }
             }
             .padding(24)
@@ -64,36 +72,40 @@ private struct DhikrCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(d.ar)
                 .font(.custom("Amiri", size: 24))
+                .foregroundStyle(Theme.ink)
                 .lineSpacing(10)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .environment(\.layoutDirection, .rightToLeft)
             if let tr = d.translation(lang) {
-                Text(tr).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                Text(tr).font(Theme.plex(14)).foregroundStyle(Theme.ink.opacity(0.9))
+                    .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 10) {
                 if let n = d.badge {
-                    Text("×\(n.formatted(.number.locale(lang.locale)))").font(.callout.bold().monospacedDigit())
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(Color.accentColor.opacity(0.15), in: .capsule)
+                    Text("×\(n.formatted(.number.locale(lang.locale)))").font(Theme.plex(13, semibold: true)).monospacedDigit()
+                        .foregroundStyle(Theme.royalDeep)
+                        .padding(.horizontal, 9).padding(.vertical, 2)
+                        .background(LinearGradient(colors: [Theme.goldLight, Theme.goldFill], startPoint: .top, endPoint: .bottom), in: .capsule)
                 }
-                if let ref = d.ref { Text(ref).font(.caption).foregroundStyle(.secondary) }
+                if let ref = d.ref { Text(ref).font(Theme.plex(11)).foregroundStyle(Theme.soft) }
                 Spacer()
-                if let m = player.message, m.id == d.id { Text(m.text).font(.caption).foregroundStyle(.orange) }
+                if let m = player.message, m.id == d.id { Text(m.text).font(Theme.plex(11)).foregroundStyle(Theme.gold) }
                 if d.audio != nil { playButton }
             }
         }
-        .padding(16)
-        .background(.background.secondary, in: .rect(cornerRadius: 12))
+        .panel(18, padding: 18)
+        .overlay { if player.playing == d.id { RoundedRectangle(cornerRadius: 18).stroke(Theme.gold.opacity(0.7), lineWidth: 1) } }
     }
 
     @ViewBuilder var playButton: some View {
         if player.loading == d.id {
             ProgressView().controlSize(.small)
         } else if player.playing == d.id {
-            Button(t(.stopAudio, lang), systemImage: "stop.fill") { player.stop() }.labelStyle(.iconOnly)
+            Button(t(.stopAudio, lang), systemImage: "stop.fill") { player.stop() }.labelStyle(.iconOnly).buttonStyle(GoldButtonStyle())
         } else {
-            Button(t(.play, lang), systemImage: "play.fill") { Task { await player.play(d, lang: lang) } }.labelStyle(.iconOnly)
+            Button(t(.play, lang), systemImage: "play.fill") { Task { await player.play(d, lang: lang) } }
+                .labelStyle(.iconOnly).buttonStyle(GoldOutlineButtonStyle())
         }
     }
 }

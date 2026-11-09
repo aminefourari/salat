@@ -62,3 +62,20 @@ func compass8(_ deg: Double) -> Int { Int(((deg.truncatingRemainder(dividingBy: 
 func flag(_ cc: String) -> String {
     String(String.UnicodeScalarView(cc.uppercased().unicodeScalars.compactMap { Unicode.Scalar(127397 + $0.value) }))
 }
+
+/// Port of skyAt in prayer.ts: the period that tints the background.
+enum Sky: Sendable { case night, dawn, day, afternoon, dusk }
+
+func skyAt(_ d: DayTimes, _ now: Date) -> Sky {
+    if now < d.fajr || now >= d.isha { return .night }
+    if now < d.sunrise { return .dawn }
+    if now < d.asr { return .day }
+    if now < d.maghrib { return .afternoon }
+    return .dusk
+}
+
+/// Fraction of the wait elapsed between the previous prayer and the next one (website's hero progress bar).
+func waitProgress(today: DayTimes, nextAt: Date, now: Date) -> Double {
+    let prev = Prayer.allCases.map { today[$0] }.filter { $0 <= now }.last ?? today.isha - 86_400
+    return min(1, max(0, now.timeIntervalSince(prev) / nextAt.timeIntervalSince(prev)))
+}

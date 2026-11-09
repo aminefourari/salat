@@ -65,3 +65,18 @@ final class SchedulerTests: XCTestCase {
         }
     }
 }
+
+final class SkyTests: XCTestCase {
+    func testSkyAndProgress() {
+        let d = computeDay(lat: 53.4319, lon: 11.1903, date: DateComponents(year: 2026, month: 11, day: 8), method: .aachen, asr: .standard)!
+        XCTAssertEqual(skyAt(d, d.fajr - 60), .night)
+        XCTAssertEqual(skyAt(d, d.fajr + 60), .dawn)
+        XCTAssertEqual(skyAt(d, d.dhuhr), .day)
+        XCTAssertEqual(skyAt(d, d.asr + 1), .afternoon)
+        XCTAssertEqual(skyAt(d, d.maghrib + 1), .dusk)
+        XCTAssertEqual(skyAt(d, d.isha), .night)
+        let mid = d.dhuhr + d.asr.timeIntervalSince(d.dhuhr) / 2
+        XCTAssertEqual(waitProgress(today: d, nextAt: d.asr, now: mid), 0.5, accuracy: 0.001)
+        XCTAssertEqual(waitProgress(today: d, nextAt: d.fajr, now: d.fajr - 3600), 1 - 3600 / d.fajr.timeIntervalSince(d.isha - 86_400), accuracy: 0.001)
+    }
+}

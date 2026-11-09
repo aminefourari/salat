@@ -16,7 +16,8 @@ struct SettingsView: View {
             Tab(t(.quran, lang), systemImage: "book") { QuranSettingsTab(settings: settings, player: quran, adhkar: adhkar) }
             Tab(t(.qibla, lang), systemImage: "location.north.line") { QiblaTab(engine: engine) }
         }
-        .frame(width: 520, height: 420)
+        .frame(width: 560, height: 480)
+        .themedWindow()
         .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
     }
 }

@@ -17,6 +17,8 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private(set) var today: DayTimes?
     private(set) var tomorrow: DayTimes?
 
+    var sky: Sky { today.map { skyAt($0, now) } ?? .night }
+
     var next: (prayer: Prayer, at: Date)? {
         guard let today, let tomorrow else { return nil }
         return nextPrayer(today: today, tomorrow: tomorrow, now: now)

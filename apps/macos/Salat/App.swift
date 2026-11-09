@@ -11,7 +11,9 @@ struct SalatApp: App {
         let settings = AppSettings()
         let path = Bundle.main.bundlePath
         // Open at login is on by default (spec); only set it once so turning it off sticks.
-        if !settings.d.openAtLoginInitialized {
+        if Snapshots.dir != nil {
+            // Developer snapshot run: leave the login item alone.
+        } else if !settings.d.openAtLoginInitialized {
             try? SMAppService.mainApp.register()
             settings.d.openAtLoginInitialized = true
             if SMAppService.mainApp.status == .enabled { settings.d.loginItemPath = path }
@@ -28,6 +30,7 @@ struct SalatApp: App {
         engine.player.onPlay = { quran.pause(); adhkar.stop() }
         adhkar.onPlay = { quran.pause(); engine.player.stop() }
         quran.onPlay = { adhkar.stop(); engine.player.stop() }
+        if let dir = Snapshots.dir { Snapshots.run(engine: engine, quran: quran, adhkar: adhkar, to: dir) }
         _engine = State(initialValue: engine)
         _quran = State(initialValue: quran)
         _adhkar = State(initialValue: adhkar)
@@ -38,8 +41,10 @@ struct SalatApp: App {
             .menuBarExtraStyle(.window)
         Window(t(.quran, engine.settings.d.lang), id: "quran") { QuranView(settings: engine.settings, player: quran) }
             .defaultSize(width: 900, height: 700)
+            .defaultLaunchBehavior(Snapshots.launch)
         Window(t(.adhkar, engine.settings.d.lang), id: "adhkar") { AdhkarView(settings: engine.settings, player: adhkar) }
             .defaultSize(width: 900, height: 700)
+            .defaultLaunchBehavior(Snapshots.launch)
         Settings { SettingsView(engine: engine, quran: quran, adhkar: adhkar) }
     }
 }

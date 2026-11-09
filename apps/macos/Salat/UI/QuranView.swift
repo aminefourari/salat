@@ -21,27 +21,31 @@ struct QuranView: View {
         NavigationSplitView {
             List(QuranText.surahs, selection: $selection) { s in
                 HStack(spacing: 10) {
-                    Text(s.n.formatted(.number.locale(lang.locale))).monospacedDigit().foregroundStyle(.secondary).frame(width: 30)
+                    StarBadge(text: s.n.formatted(.number.locale(lang.locale)))
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(s.ar).font(.custom(quranFont, size: 18))
+                        Text(s.ar).font(.custom(quranFont, size: 19))
                         Text(lang == .ar ? t(.ayahCount, lang, ["n": s.ayahs.count.formatted(.number.locale(lang.locale))])
                                          : "\(s.en) · \(t(.ayahCount, lang, ["n": String(s.ayahs.count)]))")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(Theme.plex(11)).foregroundStyle(Theme.soft)
                     }
                     Spacer()
-                    if player.surah == s.n, player.isPlaying { Image(systemName: "speaker.wave.2.fill").foregroundStyle(.tint) }
+                    if player.surah == s.n, player.isPlaying { Image(systemName: "speaker.wave.2.fill").foregroundStyle(Theme.gold) }
                 }
+                .padding(.vertical, 2)
                 .tag(s.n)
             }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 240)
+            .scrollContentBackground(.hidden)
+            .background(Theme.panelStrong)
+            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
         } detail: {
             if let n = selection {
                 SurahView(surah: QuranText.surahs[n - 1], settings: settings, player: player, reciter: reciter)
                     .id(n)
             } else {
-                Text(t(.chooseSurah, lang)).foregroundStyle(.secondary)
+                Text(t(.chooseSurah, lang)).font(Theme.kufi(22)).foregroundStyle(Theme.soft)
             }
         }
+        .themedWindow()
         .toolbar { toolbar }
         .navigationTitle(selection.map { QuranText.surahs[$0 - 1].ar } ?? t(.quran, lang))
         .onAppear { if selection == nil { selection = player.surah ?? settings.d.lastSurah } }
@@ -74,7 +78,7 @@ struct QuranView: View {
     }
 }
 
-private struct SurahView: View {
+struct SurahView: View {
     let surah: Surah
     let settings: AppSettings
     let player: QuranPlayer
@@ -88,20 +92,23 @@ private struct SurahView: View {
             if isCurrent { status }
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 6) {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        header
                         if surah.n != 1 && surah.n != 9 {
-                            Text(bismillah).font(.custom(quranFont, size: 26)).frame(maxWidth: .infinity).padding(.vertical, 12)
+                            Text(bismillah).font(.custom(quranFont, size: 28)).foregroundStyle(Theme.gold)
+                                .frame(maxWidth: .infinity).padding(.vertical, 10)
                         }
                         ForEach(Array(surah.ayahs.enumerated()), id: \.offset) { i, text in
                             let a = i + 1
                             let playing = isCurrent && player.currentAyah == a
-                            Text("\(text) \u{FD3F}\(arabicDigits(a))\u{FD3E}")
+                            (Text(text).foregroundStyle(Theme.ink) + Text(" \u{FD3F}\(arabicDigits(a))\u{FD3E}").foregroundStyle(Theme.gold))
                                 .font(.custom(quranFont, size: 28))
                                 .lineSpacing(14)
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 8).padding(.horizontal, 12)
-                                .background(playing ? Color.accentColor.opacity(0.16) : .clear, in: .rect(cornerRadius: 8))
+                                .padding(.vertical, 10).padding(.horizontal, 16)
+                                .background(playing ? Theme.gold.opacity(0.14) : .clear, in: .rect(cornerRadius: 14))
+                                .overlay { if playing { RoundedRectangle(cornerRadius: 14).stroke(Theme.gold.opacity(0.7), lineWidth: 1) } }
                                 .contentShape(.rect)
                                 .onTapGesture {
                                     settings.d.lastAyah = a
@@ -112,6 +119,8 @@ private struct SurahView: View {
                         }
                     }
                     .padding(24)
+                    .frame(maxWidth: 860)
+                    .frame(maxWidth: .infinity)
                     .environment(\.layoutDirection, .rightToLeft)
                 }
                 .onAppear { if settings.d.lastSurah == surah.n, settings.d.lastAyah > 1 { proxy.scrollTo(settings.d.lastAyah, anchor: .top) } }
@@ -124,10 +133,32 @@ private struct SurahView: View {
         }
     }
 
+    /// Surah title card under a small arch.
+    var header: some View {
+        VStack(spacing: 4) {
+            Text(surah.ar).font(.custom(quranFont, size: 40)).foregroundStyle(Theme.gold)
+            if lang != .ar { Text(surah.en).font(Theme.kufi(20)) }
+            Text(t(.ayahCount, lang, ["n": surah.ayahs.count.formatted(.number.locale(lang.locale))]))
+                .font(Theme.plex(12)).foregroundStyle(Theme.soft)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 34).padding(.bottom, 16)
+        .background(alignment: .top) {
+            ZStack {
+                ArchShape().fill(Theme.panel)
+                ArchShape().stroke(Theme.gold, lineWidth: 1.4)
+                ArchShape(inner: true).stroke(Theme.gold.opacity(0.35), lineWidth: 1)
+            }
+            .frame(width: 300)
+        }
+        .padding(.bottom, 6)
+    }
+
     @ViewBuilder var status: some View {
         switch player.state {
         case .downloading(let p):
-            HStack { Text(t(.downloading, lang)); ProgressView(value: p) }.padding(10)
+            HStack { Text(t(.downloading, lang)).foregroundStyle(Theme.soft); ProgressView(value: p).tint(Theme.gold) }
+                .padding(.horizontal, 16).padding(.vertical, 10)
         case .needsInternet:
             banner(t(.needsInternet, lang), "wifi.slash")
         case .error(let msg):
@@ -139,12 +170,12 @@ private struct SurahView: View {
 
     func banner(_ text: String, _ icon: String) -> some View {
         HStack {
-            Label(text, systemImage: icon)
+            Label(text, systemImage: icon).foregroundStyle(Theme.gold)
             Spacer()
-            Button(t(.retry, lang)) { Task { await player.play(surah: surah.n, reciter: reciter) } }
+            Button(t(.retry, lang)) { Task { await player.play(surah: surah.n, reciter: reciter) } }.buttonStyle(GoldOutlineButtonStyle())
         }
-        .padding(10)
-        .background(.orange.opacity(0.15))
+        .panel(14, padding: 12)
+        .padding(.horizontal, 16).padding(.top, 10)
     }
 }
 
@@ -189,5 +220,18 @@ struct QuranSettingsTab: View {
             AdhkarAudioSection(player: adhkar, lang: lang)
         }
         .formStyle(.grouped)
+    }
+}
+
+/// Number inside a gold eight-point star (two overlapping squares), like the website's lattice.
+struct StarBadge: View {
+    let text: String
+    var body: some View {
+        ZStack {
+            Rectangle().stroke(Theme.gold, lineWidth: 1).frame(width: 22, height: 22)
+            Rectangle().stroke(Theme.gold, lineWidth: 1).frame(width: 22, height: 22).rotationEffect(.degrees(45))
+            Text(text).font(Theme.plex(10, semibold: true)).monospacedDigit().foregroundStyle(Theme.ink)
+        }
+        .frame(width: 32, height: 32)
     }
 }
