@@ -127,7 +127,7 @@ func methodName(_ m: MethodId, _ lang: Lang) -> String {
 
 /// "HH:mm" in the Mac's current time zone.
 func hm(_ d: Date) -> String {
-    let f = DateFormatter(); f.locale = Locale(identifier: "en_GB"); f.dateFormat = "HH:mm"; f.timeZone = .current
+    let f = DateFormatter(); f.locale = Locale(identifier: "en_GB"); f.dateFormat = "HH:mm"; f.timeZone = .autoupdatingCurrent
     return f.string(from: d)
 }
 

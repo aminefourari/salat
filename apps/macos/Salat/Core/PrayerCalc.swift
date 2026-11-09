@@ -35,7 +35,7 @@ func jsRoundedMinute(_ t: Date, _ rounding: Rounding) -> Date {
 }
 
 /// Calendar day of `d` in `tz`, as year/month/day.
-func dayComponents(_ d: Date, in tz: TimeZone = .current) -> DateComponents {
+func dayComponents(_ d: Date, in tz: TimeZone = .autoupdatingCurrent) -> DateComponents {
     var cal = Calendar(identifier: .gregorian); cal.timeZone = tz
     return cal.dateComponents([.year, .month, .day], from: d)
 }

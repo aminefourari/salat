@@ -1,6 +1,5 @@
 import CoreLocation
 import XCTest
-@testable import Salat
 
 final class LocationResolveTests: XCTestCase {
     let casa = City(name: "Casablanca", lat: 33.57, lon: -7.59, cc: "MA")

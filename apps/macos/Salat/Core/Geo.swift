@@ -7,7 +7,7 @@ final class CountryLookup: Sendable {
     private struct Poly: Sendable { let cc: String?; let rings: [[SIMD2<Double>]]; let minX, minY, maxX, maxY: Double }
     private let polys: [Poly]
 
-    init(bundle: Bundle = .main) {
+    init(bundle: Bundle = Bundle(for: CountryLookup.self)) {
         struct Entry: Decodable { let cc: String?; let polys: [[[[Double]]]] }
         let url = bundle.url(forResource: "borders", withExtension: "json")!
         let entries = try! JSONDecoder().decode([Entry].self, from: Data(contentsOf: url))
@@ -51,7 +51,7 @@ final class CityIndex: Sendable {
     private let cities: [City]
     private let folded: [String]
 
-    init(bundle: Bundle = .main) {
+    init(bundle: Bundle = Bundle(for: CountryLookup.self)) {
         let text = try! String(contentsOf: bundle.url(forResource: "cities", withExtension: "txt")!, encoding: .utf8)
         cities = text.split(separator: "\n").compactMap { l in
             let f = l.split(separator: "|", omittingEmptySubsequences: false)

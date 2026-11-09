@@ -1,5 +1,4 @@
 import XCTest
-@testable import Salat
 
 /// Checks the Swift port against fixtures/parity.json, which the web test suite generates from the web code.
 final class ParityTests: XCTestCase {

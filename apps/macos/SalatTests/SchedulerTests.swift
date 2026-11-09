@@ -1,5 +1,4 @@
 import XCTest
-@testable import Salat
 
 final class SchedulerTests: XCTestCase {
     let lat = 53.4319, lon = 11.1903

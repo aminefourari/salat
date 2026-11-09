@@ -41,17 +41,24 @@ targets:
   SalatTests:
     type: bundle.unit-test
     platform: macOS
+    # Logic tests: compile the app's pure code straight in, so no app launch (and no permission prompts).
     sources:
       - path: SalatTests
+      - path: Salat/Core
+      - path: Salat/Services/LocationService.swift
+      - path: Salat/Quran/QuranText.swift
+      - path: Salat/Quran/Recitations.swift
+      - path: Salat/Resources/borders.json
+        buildPhase: resources
+      - path: Salat/Resources/cities.txt
+        buildPhase: resources
       - path: ../../fixtures/parity.json
         buildPhase: resources
     dependencies:
-      - target: Salat
+      - package: Adhan
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        BUNDLE_LOADER: $(TEST_HOST)
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Salat.app/Contents/MacOS/Salat
 schemes:
   Salat:
     build:
