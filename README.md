@@ -11,7 +11,8 @@ Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is 
   - Hisn al-Muslim adhkar with audio.
 - **Mac app** (`apps/macos`): a native menu-bar app.
   - Next prayer and countdown in the menu bar.
-  - The full adhan at each prayer.
+  - The full adhan at each prayer. Madinah (Sheikh Essam Bukhari) is the default; Makkah (Ali Ahmed Mulla, Fajr),
+    Mishary Alafasy, Al-Aqsa and Abdul Basit download on first use, and you can add your own recording.
   - A Quran reader with eight reciters and read-along highlighting, available offline.
   - Hisn al-Muslim adhkar in Arabic, English and French, with audio.
 

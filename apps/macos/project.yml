@@ -57,6 +57,9 @@ targets:
         buildPhase: resources
       - path: Salat/Core
       - path: Salat/Services/LocationService.swift
+      - path: Salat/Services/AdhanStore.swift
+      - path: Salat/Resources/adhans/hassan2.m4a
+        buildPhase: resources
       - path: Salat/Quran/QuranText.swift
       - path: Salat/Quran/Recitations.swift
       - path: Salat/Quran/QuranPlayer.swift

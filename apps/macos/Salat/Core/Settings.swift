@@ -10,8 +10,8 @@ final class AppSettings {
         var asr: AsrSchool = .standard
         var modes: [Prayer: AlertMode] = Dictionary(uniqueKeysWithValues: Prayer.allCases.map { ($0, .adhan) })
         var reminder = false
-        var adhanVoice = "hassan2"
-        var fajrVoice = "hassan2"
+        var adhanVoice = AdhanVoice.defaultId
+        var fajrVoice = AdhanVoice.defaultId
         var defaultReciter = 7
         var manualCity: City? = nil
         var useManualLocation = false
@@ -24,6 +24,7 @@ final class AppSettings {
         // Fields added later are optional so older saved settings still decode.
         var loginItemPath: String? = nil
         var lastAdhkarChapter: Int? = nil
+        var adhanDefaultsV2: Bool? = nil
     }
 
     private static let key = "settings.v1"
@@ -32,7 +33,10 @@ final class AppSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        d = defaults.data(forKey: Self.key).flatMap { try? JSONDecoder().decode(Data.self, from: $0) } ?? Data()
+        var d = defaults.data(forKey: Self.key).flatMap { try? JSONDecoder().decode(Data.self, from: $0) } ?? Data()
+        migrateAdhanDefaults(&d)
+        self.d = d
+        save() // didSet doesn't run in init
     }
 
     private func save() { defaults.set(try? JSONEncoder().encode(d), forKey: Self.key) }

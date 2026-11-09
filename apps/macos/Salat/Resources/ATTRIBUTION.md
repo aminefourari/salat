@@ -16,3 +16,7 @@
   - `adhans/fakhry.m4a`: [Call to prayer by Sabah Fakhry](https://commons.wikimedia.org/wiki/File:Call_to_prayer_by_Sabah_Fakhry.mp3), public domain
   - `adhans/beautiful.m4a`: [Beautiful adhan](https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg) by Adam-synagda, CC0
   - `adhans/azan.m4a`: [Azan](https://commons.wikimedia.org/wiki/File:Azan.ogg) by Andrewler, CC BY-SA 4.0
+- Adhans downloaded on first use (not bundled, not redistributed by Salat; no license stated by the uploaders) from the
+  [Internet Archive](https://archive.org): Madinah, Sheikh Essam Bukhari (`SheikhEssamBukhari`); Mishary Rashid Alafasy
+  (`VeryBeautifulAdhaanByMisharyAlAfasy`); Al-Aqsa (`AzanMagribDomeOfRockFri11.4.14`); Abdul Basit and Mishary Fajr
+  (`adhans_sunnah`); Makkah Fajr, Sheikh Ali Ahmed Mulla (`MakkahFajrAdhan6913SheikhAliMullah`). Users can also add their own file.

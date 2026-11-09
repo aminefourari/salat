@@ -98,17 +98,25 @@ private struct PrayerTab: View {
 
 private struct AlertsTab: View {
     let engine: AlertEngine
+    @State private var loading: String?
+    @State private var failed: String?
+    @State private var custom = AdhanStore.shared.customIds()
     var lang: Lang { engine.settings.d.lang }
 
     var body: some View {
         @Bindable var settings = engine.settings
         Form {
             Section {
-                voice(t(.adhanVoice, lang), $settings.d.adhanVoice)
-                voice(t(.fajrVoice, lang), $settings.d.fajrVoice)
-                if engine.player.isPlaying {
-                    Button(t(.stop, lang), systemImage: "stop.fill") { engine.player.stop() }
+                voice(t(.adhanVoice, lang), $settings.d.adhanVoice, fajr: false)
+                voice(t(.fajrVoice, lang), $settings.d.fajrVoice, fajr: true)
+                HStack {
+                    Button(t(.addAdhan, lang), systemImage: "plus") { addOwn() }
+                    Spacer()
+                    if engine.player.isPlaying {
+                        Button(t(.stop, lang), systemImage: "stop.fill") { engine.player.stop() }.buttonStyle(GoldButtonStyle())
+                    }
                 }
+                if let f = failed { Text(f).font(.caption).foregroundStyle(Theme.gold) }
             }
             Section {
                 ForEach(Prayer.allCases, id: \.self) { p in
@@ -126,14 +134,63 @@ private struct AlertsTab: View {
         .formStyle(.grouped)
     }
 
-    private func voice(_ label: String, _ sel: Binding<String>) -> some View {
+    private func label(_ id: String) -> String {
+        if let n = AdhanStore.shared.customName(id) { return n }
+        guard let v = AdhanVoice.find(id) else { return id }
+        return v.name(lang) + (v.remote != nil && AdhanStore.shared.local(id) == nil ? " ↓" : "")
+    }
+
+    private func voice(_ title: String, _ sel: Binding<String>, fajr: Bool) -> some View {
         HStack {
-            Picker(label, selection: sel) {
-                ForEach(AdhanVoice.all) { Text($0.name(lang)).tag($0.id) }
+            Picker(title, selection: Binding(get: { sel.wrappedValue }, set: { id in sel.wrappedValue = id; fetch(id, thenPlay: false) })) {
+                ForEach(AdhanVoice.all.filter { fajr || !$0.fajrOnly }) { Text(label($0.id)).tag($0.id) }
+                if !custom.isEmpty {
+                    Divider()
+                    ForEach(custom, id: \.self) { Text(label($0)).tag($0) }
+                }
             }
-            Button(t(.playTest, lang), systemImage: "play.fill") { engine.player.play(sel.wrappedValue) }
-                .labelStyle(.iconOnly)
+            if loading == sel.wrappedValue {
+                ProgressView().controlSize(.small)
+            } else {
+                Button(t(.playTest, lang), systemImage: "play.fill") { fetch(sel.wrappedValue, thenPlay: true) }
+                    .labelStyle(.iconOnly).buttonStyle(GoldOutlineButtonStyle())
+            }
+            if AdhanStore.shared.customName(sel.wrappedValue) != nil {
+                Button(t(.delete, lang), systemImage: "trash") {
+                    AdhanStore.shared.deleteCustom(sel.wrappedValue)
+                    sel.wrappedValue = AdhanVoice.defaultId
+                    custom = AdhanStore.shared.customIds()
+                }.labelStyle(.iconOnly)
+            }
         }
+    }
+
+    /// Downloads an Internet Archive voice the first time it's picked or played.
+    private func fetch(_ id: String, thenPlay: Bool) {
+        failed = nil
+        guard let v = AdhanVoice.find(id), v.remote != nil, AdhanStore.shared.local(id) == nil else {
+            if thenPlay { engine.player.play(id) }
+            return
+        }
+        loading = id
+        Task {
+            do { try await AdhanStore.shared.download(v); if thenPlay { engine.player.play(id) } }
+            catch { failed = QuranPlayer.isOffline(error) ? t(.needsInternet, lang) : error.localizedDescription }
+            loading = nil
+        }
+    }
+
+    private func addOwn() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.audio]
+        panel.allowsMultipleSelection = false
+        NSApp.activate()
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let id = try AdhanStore.shared.importFile(url)
+            custom = AdhanStore.shared.customIds()
+            engine.settings.d.adhanVoice = id
+        } catch { failed = error.localizedDescription }
     }
 }
 

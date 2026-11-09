@@ -2,19 +2,6 @@ import AppKit
 import AVFoundation
 import Observation
 
-struct AdhanVoice: Identifiable, Sendable {
-    let id: String
-    let names: (en: String, fr: String, ar: String)
-    func name(_ l: Lang) -> String { l == .fr ? names.fr : l == .ar ? names.ar : names.en }
-
-    static let all = [
-        AdhanVoice(id: "hassan2", names: ("Hassan II Mosque, Casablanca", "Mosquée Hassan II, Casablanca", "مسجد الحسن الثاني، الدار البيضاء")),
-        AdhanVoice(id: "fakhry", names: ("Sabah Fakhri", "Sabah Fakhri", "صباح فخري")),
-        AdhanVoice(id: "beautiful", names: ("Adhan (calm)", "Adhan (calme)", "أذان هادئ")),
-        AdhanVoice(id: "azan", names: ("Adhan (classic)", "Adhan (classique)", "أذان تقليدي")),
-    ]
-}
-
 @MainActor @Observable
 final class AdhanPlayer: NSObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
@@ -23,7 +10,9 @@ final class AdhanPlayer: NSObject, AVAudioPlayerDelegate {
 
     func play(_ id: String) {
         stop()
-        guard let url = Bundle.main.url(forResource: id, withExtension: "m4a") ?? Bundle.main.url(forResource: "hassan2", withExtension: "m4a"),
+        // Not downloaded yet (or a deleted custom file): fall back to a bundled adhan, never silence.
+        if AdhanStore.shared.local(id) == nil, let v = AdhanVoice.find(id) { Task.detached { try? await AdhanStore.shared.download(v) } }
+        guard let url = AdhanStore.shared.local(id) ?? AdhanStore.shared.local("hassan2"),
               let p = try? AVAudioPlayer(contentsOf: url) else { NSSound.beep(); return }
         p.delegate = self
         player = p

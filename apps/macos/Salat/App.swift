@@ -30,6 +30,10 @@ struct SalatApp: App {
         engine.player.onPlay = { quran.pause(); adhkar.stop() }
         adhkar.onPlay = { quran.pause(); engine.player.stop() }
         quran.onPlay = { adhkar.stop(); engine.player.stop() }
+        // Fetch the chosen Internet Archive adhans now, so the first prayer plays them (bundled fallback until then).
+        for id in Set([settings.d.adhanVoice, settings.d.fajrVoice]) {
+            if let v = AdhanVoice.find(id) { Task.detached { try? await AdhanStore.shared.download(v) } }
+        }
         if let dir = Snapshots.dir { Snapshots.run(engine: engine, quran: quran, adhkar: adhkar, to: dir) }
         _engine = State(initialValue: engine)
         _quran = State(initialValue: quran)
