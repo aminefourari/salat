@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdhkarRouteImport } from './routes/adhkar'
 import { Route as QiblaRouteImport } from './routes/qibla'
+import { Route as QuranRouteImport } from './routes/quran'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiPlaceRouteImport } from './routes/api/place'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
@@ -21,9 +23,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdhkarRoute = AdhkarRouteImport.update({
+  id: '/adhkar',
+  path: '/adhkar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QiblaRoute = QiblaRouteImport.update({
   id: '/qibla',
   path: '/qibla',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuranRoute = QuranRouteImport.update({
+  id: '/quran',
+  path: '/quran',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -49,7 +61,9 @@ const ApiTestPushRoute = ApiTestPushRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adhkar': typeof AdhkarRoute
   '/qibla': typeof QiblaRoute
+  '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -57,7 +71,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adhkar': typeof AdhkarRoute
   '/qibla': typeof QiblaRoute
+  '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -66,7 +82,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adhkar': typeof AdhkarRoute
   '/qibla': typeof QiblaRoute
+  '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -76,7 +94,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adhkar'
     | '/qibla'
+    | '/quran'
     | '/settings'
     | '/api/place'
     | '/api/subscribe'
@@ -84,7 +104,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adhkar'
     | '/qibla'
+    | '/quran'
     | '/settings'
     | '/api/place'
     | '/api/subscribe'
@@ -92,7 +114,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/adhkar'
     | '/qibla'
+    | '/quran'
     | '/settings'
     | '/api/place'
     | '/api/subscribe'
@@ -101,7 +125,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdhkarRoute: typeof AdhkarRoute
   QiblaRoute: typeof QiblaRoute
+  QuranRoute: typeof QuranRoute
   SettingsRoute: typeof SettingsRoute
   ApiPlaceRoute: typeof ApiPlaceRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
@@ -117,11 +143,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adhkar': {
+      id: '/adhkar'
+      path: '/adhkar'
+      fullPath: '/adhkar'
+      preLoaderRoute: typeof AdhkarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/qibla': {
       id: '/qibla'
       path: '/qibla'
       fullPath: '/qibla'
       preLoaderRoute: typeof QiblaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quran': {
+      id: '/quran'
+      path: '/quran'
+      fullPath: '/quran'
+      preLoaderRoute: typeof QuranRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -157,7 +197,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdhkarRoute: AdhkarRoute,
   QiblaRoute: QiblaRoute,
+  QuranRoute: QuranRoute,
   SettingsRoute: SettingsRoute,
   ApiPlaceRoute: ApiPlaceRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,

@@ -2,7 +2,7 @@ import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-rou
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
 import { syncPush, useLoc, useSettings } from '../lib/client'
-import { Mark, NavQibla, NavSettings, NavTimes } from '../components/icons'
+import { Mark, NavAdhkar, NavQibla, NavQuran, NavSettings, NavTimes } from '../components/icons'
 import { t } from '../lib/i18n'
 
 export const Route = createRootRoute({
@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
       { name: 'apple-mobile-web-app-title', content: 'Salat' },
-      { name: 'description', content: 'Prayer times, reminders and Qibla for where you are.' },
+      { name: 'description', content: 'Prayer times, reminders, Qibla, Quran and adhkar.' },
       { title: 'Salat' },
     ],
     links: [
@@ -66,6 +66,8 @@ function Shell({ children }: { children: React.ReactNode }) {
       <main className="app">{children}</main>
       <nav className="tabs" aria-label="Salat">
         <Link to="/"><NavTimes className="tab-icon" /><span>{t(lang, 'times')}</span></Link>
+        <Link to="/quran"><NavQuran className="tab-icon" /><span>{t(lang, 'quran')}</span></Link>
+        <Link to="/adhkar"><NavAdhkar className="tab-icon" /><span>{t(lang, 'adhkar')}</span></Link>
         <Link to="/qibla"><NavQibla className="tab-icon" /><span>{t(lang, 'qibla')}</span></Link>
         <Link to="/settings"><NavSettings className="tab-icon" /><span>{t(lang, 'settings')}</span></Link>
       </nav>

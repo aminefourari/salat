@@ -172,3 +172,15 @@ export async function testPush() {
   const res = await fetch('/api/test-push', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) })
   if (!res.ok) throw new Error(`test failed: ${res.status}`)
 }
+
+/** Quran and adhkar reading state, per device. */
+export type ReadPrefs = { reciter: number; surah: number; ayah: number; adhkar: number }
+const DEFAULT_READ: ReadPrefs = { reciter: 7, surah: 1, ayah: 1, adhkar: 27 }
+export const useReadPrefs = () => useStored<ReadPrefs>('salat.read', DEFAULT_READ, DEFAULT_READ)
+
+/** Loads `load()` once per page lifetime (the bundled Quran/adhkar JSON). */
+export function useLazy<T>(load: () => Promise<T>): T | null {
+  const [v, setV] = useState<T | null>(null)
+  useEffect(() => { load().then(setV, () => {}) }, [load])
+  return v
+}

@@ -4,8 +4,11 @@
 
 Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is and stays free.
 
-- **Web app** (`apps/web`): an installable PWA on Cloudflare Workers. Today's prayer times for your location,
-  push notifications at each prayer and 10 minutes before, and a Qibla compass.
+- **Web app** (`apps/web`): an installable PWA on Cloudflare Workers.
+  - Today's prayer times for your location, with push notifications at each prayer and 10 minutes before.
+  - A Qibla compass.
+  - A Quran reader with streamed recitation and read-along highlighting.
+  - Hisn al-Muslim adhkar with audio.
 - **Mac app** (`apps/macos`): a native menu-bar app.
   - Next prayer and countdown in the menu bar.
   - The full adhan at each prayer.
@@ -66,7 +69,8 @@ Release with `Salat-v1.0.0.zip`.
 - **City names:** [GeoNames](https://www.geonames.org) `cities5000` (CC BY 4.0). The Worker and the Mac app both
   bundle them, so location lookups never leave our own infrastructure.
 - **Country borders:** [country-coder](https://github.com/rapideditor/country-coder).
-- **Quran text and recitations:** [quran.com](https://quran.com).
+- **Quran text and recitations:** [quran.com](https://quran.com). The Mac app downloads recitations for offline use;
+  the website streams them.
 - **Adhkar:** Hisn al-Muslim via [hisnmuslim.com](https://www.hisnmuslim.com) (Arabic, English, audio) and the AR-FR
   ["La Citadelle du Musulman"](https://github.com/Kiwifu/la-citadelle-du-musulman) (French, references). The book is
   distributed free and not for sale.

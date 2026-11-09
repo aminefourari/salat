@@ -19,6 +19,12 @@ export const NavTimes = (p: P) => <svg {...base} {...p}><circle cx="12" cy="12" 
 export const NavQibla = (p: P) => (
   <svg {...base} {...p}><path d="M5 8.5 12 5l7 3.5v8L12 20l-7-3.5Z" /><path d="M5 8.5 12 12l7-3.5M12 12v8" /><path d="M5 11l7 3.5 7-3.5" opacity=".55" /></svg>
 )
+export const NavQuran = (p: P) => (
+  <svg {...base} {...p}><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5Z" /><path d="M12 6.5v13" /></svg>
+)
+export const NavAdhkar = (p: P) => (
+  <svg {...base} {...p}><circle cx="12" cy="5" r="1.6" /><circle cx="17.2" cy="8" r="1.6" /><circle cx="17.2" cy="14" r="1.6" /><circle cx="6.8" cy="8" r="1.6" /><circle cx="6.8" cy="14" r="1.6" /><circle cx="12" cy="17" r="1.6" /><path d="M12 18.6V22" /></svg>
+)
 export const NavSettings = (p: P) => (
   <svg {...base} {...p}><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></svg>
 )

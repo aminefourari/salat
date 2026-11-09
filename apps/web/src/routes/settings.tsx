@@ -2,11 +2,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import {
   currentPushSub, disablePush, enablePush, isIos, isStandalone, pushSupported,
-  setNotify, setSettings, testPush, useLocation, useNotify, useSettings,
+  setNotify, setSettings, testPush, useLocation, useNotify, useReadPrefs, useSettings,
 } from '../lib/client'
 import { VAPID_PUBLIC_KEY } from '../lib/config'
 import { t } from '../lib/i18n'
 import { METHOD_IDS } from '../lib/methods'
+import { RECITERS } from '../lib/quran'
 import { resolveMethod, type Lang, type Settings } from '../lib/prayer'
 
 export const Route = createFileRoute('/settings')({ component: SettingsPage })
@@ -16,6 +17,7 @@ type PushState = 'loading' | 'on' | 'off' | 'denied' | 'unsupported' | 'install'
 function SettingsPage() {
   const [s] = useSettings()
   const [notify] = useNotify()
+  const [read, setRead] = useReadPrefs()
   const { loc } = useLocation()
   const { lang } = s
   const [push, setPush] = useState<PushState>('loading')
@@ -60,6 +62,16 @@ function SettingsPage() {
           <select id="asr" value={s.asr} onChange={e => update({ asr: e.target.value as Settings['asr'] })}>
             <option value="standard">{t(lang, 'standard')}</option>
             <option value="hanafi">{t(lang, 'hanafi')}</option>
+          </select>
+        </div>
+      </div>
+
+      <h2>{t(lang, 'quran')}</h2>
+      <div className="panel">
+        <div className="field">
+          <label htmlFor="reciter">{t(lang, 'defaultReciter')}</label>
+          <select id="reciter" value={read.reciter} onChange={e => setRead({ ...read, reciter: Number(e.target.value) })}>
+            {RECITERS.map(r => <option key={r.id} value={r.id}>{lang === 'ar' ? r.ar : r.latin}</option>)}
           </select>
         </div>
       </div>
