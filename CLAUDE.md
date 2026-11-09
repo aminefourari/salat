@@ -15,6 +15,7 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `npm run db:migrate`: apply `apps/web/migrations/` to remote D1 `salat`
 - `cd apps/web && npx wrangler secret put VAPID_PRIVATE_KEY`: push signing key (never commit it)
 - `npm run mac:build` / `npm run mac:test`: XcodeGen + xcodebuild → `apps/macos/build/Salat.app` / Swift tests
+- `TEST_RUNNER_SALAT_LIVE=1 npm run mac:test`: also runs the live quran.com download test
 - `apps/macos/scripts/fetch-assets.sh`: regenerate bundled Quran text, font, adhans (outputs are committed)
 
 ## Structure
@@ -28,6 +29,8 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `fixtures/parity.json`: prayer/country cases generated from the web code, checked by both apps
 - `apps/macos/Salat/Core`: Swift ports of methods/prayer math, scheduler, strings, settings
 - `apps/macos/Salat/{Services,Quran,UI}`: location, adhan alerts, Quran reader/player, SwiftUI views
+- `apps/macos/project.yml`: XcodeGen spec (no `.xcodeproj` committed). The test target compiles the pure sources directly (no app host); add new pure files there too.
+- `apps/macos/Salat/Resources/ATTRIBUTION.md`: licenses of the bundled Quran text, font, adhans, borders, cities
 
 ## Conventions
 
