@@ -18,3 +18,7 @@ dist
 dist-ssr
 node_modules
 todos.json
+
+# macOS
+apps/macos/build/
+apps/macos/*.xcodeproj
