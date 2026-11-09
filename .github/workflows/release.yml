@@ -1,0 +1,44 @@
+name: Release
+
+# Push a tag like v1.2.0 → tests, an unsigned Salat.app build, and a GitHub Release with the zip.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: brew install xcodegen
+      - run: npm ci
+      - run: npm test
+      - run: npm run mac:test
+      - name: Build Salat.app
+        env:
+          VERSION: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: VERSION="${VERSION#v}" npm run mac:build
+      - name: Zip
+        run: ditto -c -k --keepParent apps/macos/build/Salat.app "Salat-${GITHUB_REF_NAME}.zip"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'MD'
+          Salat for macOS (menu-bar adhan, Quran, adhkar). Free, unsigned build.
+
+          **Install:** unzip, move `Salat.app` to Applications, then open it. macOS blocks unsigned apps the first time:
+          open **System Settings → Privacy & Security** and click **Open Anyway**, or run
+          `xattr -dr com.apple.quarantine /Applications/Salat.app` in Terminal.
+
+          Requires macOS 15 or later.
+          MD
+          gh release create "$GITHUB_REF_NAME" "Salat-${GITHUB_REF_NAME}.zip" --title "Salat $GITHUB_REF_NAME" --notes-file notes.md

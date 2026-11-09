@@ -1,29 +1,76 @@
 <img src="apps/web/assets/icon.svg" width="64" height="64" alt="">
 
-# salat
+# Salat
 
-Prayer times, adhan and Quran. Monorepo:
+Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is and stays free.
 
-- `apps/web`: the PWA + Cloudflare Worker (`npm run dev`, `npm test`, `npm run deploy`)
-- `apps/macos`: the native Mac app (menu bar adhan, Quran reader, Hisn al-Muslim adhkar), see below
+- **Web app** (`apps/web`): an installable PWA on Cloudflare Workers. Today's prayer times for your location,
+  push notifications at each prayer and 10 minutes before, and a Qibla compass.
+- **Mac app** (`apps/macos`): a native menu-bar app.
+  - Next prayer and countdown in the menu bar.
+  - The full adhan at each prayer.
+  - A Quran reader with eight reciters and read-along highlighting, available offline.
+  - Hisn al-Muslim adhkar in Arabic, English and French, with audio.
 
-Created in [T3 Code](https://t3.codes).
+Both apps compute the same prayer times to the minute. The website's method table is ported to Swift, and a shared
+test fixture keeps the two in sync.
 
-## Mac app
+| Menu bar | Quran | Adhkar |
+|---|---|---|
+| <img src="docs/screenshots/mac-menu-dark.png" width="220" alt="Menu-bar panel, dark"> | <img src="docs/screenshots/mac-quran-dark.png" width="300" alt="Quran window, dark"> | <img src="docs/screenshots/mac-adhkar-dark.png" width="300" alt="Adhkar window, dark"> |
+| <img src="docs/screenshots/mac-menu-light.png" width="220" alt="Menu-bar panel, light"> | <img src="docs/screenshots/mac-quran-light.png" width="300" alt="Quran window, light"> | <img src="docs/screenshots/mac-adhkar-light.png" width="300" alt="Adhkar window, light"> |
 
-Needs Xcode and XcodeGen (`brew install xcodegen`).
+## Install the Mac app
+
+1. Download `Salat-vX.Y.Z.zip` from [Releases](https://github.com/aminefourari/salat/releases).
+2. Unzip it and move `Salat.app` to Applications.
+3. Open it. The build is unsigned, so macOS blocks it the first time. Open **System Settings → Privacy & Security** and click **Open Anyway**, or run:
+
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/Salat.app
+   ```
+
+It requires macOS 15 or later. Salat starts at login by default; you can change this in Settings → General.
+
+## Development
 
 ```sh
-npm run mac:build              # → apps/macos/build/Salat.app
-open apps/macos/build/Salat.app
-npm run mac:test               # Swift tests, incl. parity with the web's prayer times
-ditto apps/macos/build/Salat.app /Applications/Salat.app   # install (quit Salat first)
+npm install
+npm run dev            # web app on :3000
+npm test               # web tests (Vitest), incl. the web↔Mac parity fixture
+npm run deploy         # build + wrangler deploy (Cloudflare Worker "salat")
+
+brew install xcodegen  # once
+npm run mac:test       # Swift tests
+npm run mac:build      # → apps/macos/build/Salat.app
+ditto apps/macos/build/Salat.app /Applications/Salat.app   # install locally (quit Salat first)
 ```
 
-The app is unsigned (local only). If macOS refuses to open it, right-click → Open once.
+To refresh the screenshots, run `apps/macos/build/Salat.app/Contents/MacOS/Salat -snapshot DIR`. It renders the views
+in dark and light, then quits.
 
-## Data
+## Releasing
 
-City names come from [GeoNames](https://www.geonames.org) `cities5000` (CC BY 4.0), bundled into the Worker by `apps/web/scripts/cities.py`, so location lookups never leave our own Cloudflare account. The Mac app bundles the same list.
+CI (`.github/workflows/ci.yml`) runs the web and Swift tests on every push to `main` and on pull requests. To publish a
+release, push a version tag:
 
-Quran text and recitations: [quran.com](https://quran.com). Adhkar: Hisn al-Muslim via [hisnmuslim.com](https://www.hisnmuslim.com) and the AR-FR "Citadelle du Musulman". Salat is and stays free. Adhan recordings, fonts and full credits: see `apps/macos/Salat/Resources/ATTRIBUTION.md`.
+```sh
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+`.github/workflows/release.yml` then runs the tests, builds `Salat.app` with that version, and publishes a GitHub
+Release with `Salat-v1.0.0.zip`.
+
+## Data and credits
+
+- **City names:** [GeoNames](https://www.geonames.org) `cities5000` (CC BY 4.0). The Worker and the Mac app both
+  bundle them, so location lookups never leave our own infrastructure.
+- **Country borders:** [country-coder](https://github.com/rapideditor/country-coder).
+- **Quran text and recitations:** [quran.com](https://quran.com).
+- **Adhkar:** Hisn al-Muslim via [hisnmuslim.com](https://www.hisnmuslim.com) (Arabic, English, audio) and the AR-FR
+  ["La Citadelle du Musulman"](https://github.com/Kiwifu/la-citadelle-du-musulman) (French, references). The book is
+  distributed free and not for sale.
+- **Adhan recordings and fonts** (Amiri, Amiri Quran, Reem Kufi, IBM Plex Sans Arabic): see
+  `apps/macos/Salat/Resources/ATTRIBUTION.md`.
+
+Created in [T3 Code](https://t3.codes).
