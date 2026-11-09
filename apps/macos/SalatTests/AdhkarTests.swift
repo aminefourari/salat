@@ -19,6 +19,14 @@ final class AdhkarDataTests: XCTestCase {
         // After-salah Quls must not borrow the morning entry's reference.
         XCTAssertNil(dhikr(70).ref)
         XCTAssertEqual(AdhkarText.chapters.first { $0.id == 27 }?.title(.fr), "Évocations du matin et du soir")
+        // Review findings: a short quoted verse or a sub-phrase must not win over the real dua.
+        XCTAssertTrue(dhikr(74).ref?.contains("7/162") == true, dhikr(74).ref ?? "nil") // istikhara
+        XCTAssertTrue(dhikr(19).ref?.contains("Muslim") == true, dhikr(19).ref ?? "nil") // going to the mosque
+        // hisnmuslim chapter 86 wrongly repeats dhikr 198 of chapter 87.
+        let ids = all.map(\.id)
+        XCTAssertEqual(ids.count, Set(ids).count)
+        let t86 = AdhkarText.chapters.first { $0.id == 86 }?.title(.fr), t87 = AdhkarText.chapters.first { $0.id == 87 }?.title(.fr)
+        XCTAssertNotEqual(t86, t87)
     }
 
     func testBadgeHiddenWhenTextHasCount() {

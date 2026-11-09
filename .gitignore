@@ -22,3 +22,4 @@ todos.json
 # macOS
 apps/macos/build/
 apps/macos/*.xcodeproj
+__pycache__/

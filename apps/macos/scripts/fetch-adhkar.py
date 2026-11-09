@@ -9,6 +9,10 @@ import difflib, json, re, sys, urllib.request
 HISN = 'https://www.hisnmuslim.com/api'
 FR_MD = 'https://raw.githubusercontent.com/Kiwifu/la-citadelle-du-musulman/main/La_Citadelle_du_Musulman_AR-FR.md'
 THRESHOLD = 0.6
+# hisnmuslim chapter 86 ("for one who says 'may Allah forgive you'") holds only a misplaced copy of dhikr 198
+# (chapter 87): drop it, pin the French chapter, and use the French edition's own entry (no audio) instead.
+MISPLACED = {86: (198,)}
+FR_CHAPTER = {86: 87}
 
 
 def get(url):
@@ -40,17 +44,22 @@ def score(a_raw, b_raw):
     a, b = norm(a_raw), norm(b_raw)
     if not a or not b:
         return 0.0
+    ratio = difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
     short, long_ = sorted((a, b), key=len)
-    if len(short) >= 25 and short in long_:
-        return 0.95
     short_raw = a_raw if len(a) <= len(b) else b_raw
     frags = fragments(short_raw)
-    if frags and sum(map(len, frags)) >= 20 and all(f in long_ for f in frags):
-        return 0.9
-    return difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
+    # An abbreviated Quran passage ("…", "[آية الكرسي]") stands for the whole text.
+    if len(frags) > 1 or re.search(r'\.\.\.|…|\[', short_raw):
+        if frags and sum(map(len, frags)) >= 20 and all(f in long_ for f in frags):
+            return max(ratio, 0.9)
+    # Plain containment counts only as much as it covers: a quoted verse or one phrase of a longer dua
+    # must not beat the dua's real entry.
+    if len(short) >= 25 and short in long_:
+        return max(ratio, 0.45 + 0.5 * len(short) / len(long_))  # below the 0.6 threshold under ~30% coverage
+    return ratio
 
 
-COUNT_RE = re.compile('مره|مرات|مايه|ميه|ثلاثا|سبعا|عشر')  # norm() maps ئ→ي, ة→ه;  # matched against norm(text)
+COUNT_RE = re.compile(r'\b(مره|مرات|مايه|ميه|ثلاثا|سبعا|عشر)\b')  # norm() maps ئ→ي, ة→ه;  # matched against norm(text)
 
 
 def parse_fr(md):
@@ -87,7 +96,7 @@ def main(out):
     result, matched, unmatched, weak = [], 0, [], []
     for ch in sorted(ar_index, key=lambda c: int(c['ID'])):
         cid = int(ch['ID'])
-        ar_items = get_json(ch['TEXT'].replace('http://', 'https://'))
+        ar_items = [a for a in get_json(ch['TEXT'].replace('http://', 'https://')) if int(a['ID']) not in MISPLACED.get(cid, ())]
         en_ch = en_index.get(ch['ID']) or en_index.get(cid)
         en_items = {int(x['ID']): x for x in get_json(en_ch['TEXT'].replace('http://', 'https://'))} if en_ch else {}
         # French chapter numbers drift from hisnmuslim's (+1 mostly): pair the chapter with the nearby French chapter
@@ -95,12 +104,16 @@ def main(out):
         def chapter_fit(n):
             return sum(max((score(a['ARABIC_TEXT'], x['ar']) for x in fr[n]['items']), default=0) for a in ar_items)
         cands = [n for n in range(cid - 1, cid + 4) if n in fr]
-        fr_no = max(cands, key=lambda n: (chapter_fit(n), -abs(n - (cid + 1)))) if cands else None
+        fr_no = FR_CHAPTER.get(cid) or max(cands, key=lambda n: (chapter_fit(n), -abs(n - (cid + 1)))) if cands else None
         fr_ch = fr.get(fr_no, {'title': None, 'items': []})
-        pairs = sorted(((score(a['ARABIC_TEXT'], x['ar']), ai, fi)
-                        for ai, a in enumerate(ar_items) for fi, x in enumerate(fr_ch['items'])), reverse=True)
+        # A strong direct match (ratio ≥ 0.75) beats abbreviation/containment matches; then by score, then ratio.
+        def ratio(x, y):
+            return difflib.SequenceMatcher(None, norm(x), norm(y), autojunk=False).ratio()
+        pairs = sorted(((r >= 0.75, score(a['ARABIC_TEXT'], x['ar']), r, ai, fi)
+                        for ai, a in enumerate(ar_items) for fi, x in enumerate(fr_ch['items'])
+                        for r in [ratio(a['ARABIC_TEXT'], x['ar'])]), reverse=True)
         used_a, used_f, best = set(), set(), {}
-        for sc, ai, fi in pairs:
+        for _, sc, _, ai, fi in pairs:
             if ai in used_a or fi in used_f:
                 continue
             used_a.add(ai); used_f.add(fi)
@@ -128,6 +141,11 @@ def main(out):
                 'count_in_text': bool(COUNT_RE.search(norm(a['ARABIC_TEXT']))),
                 'audio': audio,
             })
+        if not items:  # only the French edition has this chapter's dhikr
+            items = [{'id': -(cid * 100 + k), 'ar': f['ar'].strip(' «».'), 'en': None, 'fr': f['fr'],
+                      'ref': f['ref'], 'repeat': 1, 'count_in_text': False, 'audio': None}
+                     for k, f in enumerate(fr_ch['items'], 1)]
+            print(f'chapter {cid}: filled from the French edition ({len(items)} adhkar, no audio)')
         result.append({'id': cid, 'ar': ch['TITLE'].strip(), 'en': (en_ch or {}).get('TITLE', ch['TITLE']).strip(),
                        'fr': fr_ch['title'], 'items': items})
     json.dump(result, open(out, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))

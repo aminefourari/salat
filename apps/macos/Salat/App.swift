@@ -14,20 +14,20 @@ struct SalatApp: App {
         if !settings.d.openAtLoginInitialized {
             try? SMAppService.mainApp.register()
             settings.d.openAtLoginInitialized = true
-            settings.d.loginItemPath = path
+            if SMAppService.mainApp.status == .enabled { settings.d.loginItemPath = path }
         } else if loginItemNeedsRefresh(registeredPath: settings.d.loginItemPath, currentPath: path,
                                          enabled: SMAppService.mainApp.status == .enabled) {
             try? SMAppService.mainApp.unregister() // the app moved (e.g. into /Applications): point the login item here
             try? SMAppService.mainApp.register()
-            settings.d.loginItemPath = path
+            if SMAppService.mainApp.status == .enabled { settings.d.loginItemPath = path }
         }
         let engine = AlertEngine(settings: settings, location: LocationService())
         let quran = QuranPlayer()
         let adhkar = AdhkarPlayer()
         // One sound at a time: the adhan stops everything, a dhikr stops the Quran and vice versa.
         engine.player.onPlay = { quran.pause(); adhkar.stop() }
-        adhkar.onPlay = { quran.pause() }
-        quran.onPlay = { adhkar.stop() }
+        adhkar.onPlay = { quran.pause(); engine.player.stop() }
+        quran.onPlay = { adhkar.stop(); engine.player.stop() }
         _engine = State(initialValue: engine)
         _quran = State(initialValue: quran)
         _adhkar = State(initialValue: adhkar)

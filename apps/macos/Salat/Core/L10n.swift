@@ -23,7 +23,7 @@ enum L10nKey: String, CaseIterable, Sendable {
     case reciter, defaultReciter, download, downloadAll, delete, needsInternet, downloading, notDownloaded, retry
     case location, automatic, manualCity, searchCity, locationDenied, noLocation
     case play, pause, previous, nextAyah, chooseSurah, cancel, ayahCount
-    case adhkar, adhkarAudio, searchCategory, chooseCategory
+    case adhkar, adhkarAudio, searchCategory, chooseCategory, stopAudio
 }
 
 private let en: [L10nKey: String] = [
@@ -49,7 +49,7 @@ private let en: [L10nKey: String] = [
     .noLocation: "Choose a city in Settings to see prayer times.",
     .play: "Play", .pause: "Pause", .previous: "Previous ayah", .nextAyah: "Next ayah", .chooseSurah: "Choose a surah",
     .cancel: "Cancel", .ayahCount: "{n} ayahs",
-    .adhkar: "Adhkar", .adhkarAudio: "Adhkar audio", .searchCategory: "Search", .chooseCategory: "Choose a category",
+    .adhkar: "Adhkar", .adhkarAudio: "Adhkar audio", .searchCategory: "Search", .chooseCategory: "Choose a category", .stopAudio: "Stop",
 ]
 
 private let fr: [L10nKey: String] = [
@@ -75,7 +75,7 @@ private let fr: [L10nKey: String] = [
     .noLocation: "Choisissez une ville dans les réglages pour voir les horaires.",
     .play: "Lecture", .pause: "Pause", .previous: "Verset précédent", .nextAyah: "Verset suivant", .chooseSurah: "Choisissez une sourate",
     .cancel: "Annuler", .ayahCount: "{n} versets",
-    .adhkar: "Adhkar", .adhkarAudio: "Audio des adhkar", .searchCategory: "Rechercher", .chooseCategory: "Choisissez une catégorie",
+    .adhkar: "Adhkar", .adhkarAudio: "Audio des adhkar", .searchCategory: "Rechercher", .chooseCategory: "Choisissez une catégorie", .stopAudio: "Arrêter",
 ]
 
 private let ar: [L10nKey: String] = [
@@ -101,7 +101,7 @@ private let ar: [L10nKey: String] = [
     .noLocation: "اختر مدينة من الإعدادات لعرض المواقيت.",
     .play: "تشغيل", .pause: "إيقاف مؤقت", .previous: "الآية السابقة", .nextAyah: "الآية التالية", .chooseSurah: "اختر سورة",
     .cancel: "إلغاء", .ayahCount: "{n} آية",
-    .adhkar: "الأذكار", .adhkarAudio: "صوتيات الأذكار", .searchCategory: "بحث", .chooseCategory: "اختر بابًا",
+    .adhkar: "الأذكار", .adhkarAudio: "صوتيات الأذكار", .searchCategory: "بحث", .chooseCategory: "اختر بابًا", .stopAudio: "إيقاف",
 ]
 
 private let dict: [Lang: [L10nKey: String]] = [.en: en, .fr: fr, .ar: ar]

@@ -91,7 +91,7 @@ private struct DhikrCard: View {
         if player.loading == d.id {
             ProgressView().controlSize(.small)
         } else if player.playing == d.id {
-            Button(t(.pause, lang), systemImage: "stop.fill") { player.stop() }.labelStyle(.iconOnly)
+            Button(t(.stopAudio, lang), systemImage: "stop.fill") { player.stop() }.labelStyle(.iconOnly)
         } else {
             Button(t(.play, lang), systemImage: "play.fill") { Task { await player.play(d, lang: lang) } }.labelStyle(.iconOnly)
         }
