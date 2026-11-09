@@ -66,7 +66,8 @@ final class QuranPlayer {
         resume()
     }
 
-    func resume() { guard state == .ready else { return }; player.play(); isPlaying = true; publishNowPlaying() }
+    var onPlay: (() -> Void)?
+    func resume() { guard state == .ready else { return }; player.play(); isPlaying = true; onPlay?(); publishNowPlaying() }
     func pause() { player.pause(); isPlaying = false; publishNowPlaying() }
     func toggle() { isPlaying ? pause() : resume() }
     func next() { if let a = currentAyah, a < timings.count { seek(toAyah: a + 1) } }

@@ -3,7 +3,7 @@
 Prayer-times monorepo (npm workspaces):
 
 - `apps/web`: PWA (TanStack Start + React), deployed as one Cloudflare Worker (`salat`).
-- `apps/macos`: native SwiftUI menu-bar app (adhan + Quran), local/unsigned.
+- `apps/macos`: native SwiftUI menu-bar app (adhan + Quran + adhkar), local/unsigned. Installed at `/Applications/Salat.app`. The project always stays free (the bundled adhkar content is "free, not for sale").
 
 Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2026-11-09-salat-macos-design.md`). Plans: `docs/superpowers/plans/`.
 
@@ -16,7 +16,8 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `cd apps/web && npx wrangler secret put VAPID_PRIVATE_KEY`: push signing key (never commit it)
 - `npm run mac:build` / `npm run mac:test`: XcodeGen + xcodebuild → `apps/macos/build/Salat.app` / Swift tests
 - `TEST_RUNNER_SALAT_LIVE=1 npm run mac:test`: also runs the live quran.com download test
-- `apps/macos/scripts/fetch-assets.sh`: regenerate bundled Quran text, font, adhans (outputs are committed)
+- `apps/macos/scripts/fetch-assets.sh`: regenerate bundled Quran text, fonts, adhans and adhkar (outputs are committed); `fetch-adhkar.py` prints the AR/EN↔FR pairing report
+- Install: `npm run mac:build && ditto apps/macos/build/Salat.app /Applications/Salat.app` (quit Salat first)
 
 ## Structure
 
@@ -28,7 +29,7 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `apps/web/test/`: Vitest tests; `fixtures/aachen-2026.json` is the Islamic Center Aachen 2026 timetable
 - `fixtures/parity.json`: prayer/country cases generated from the web code, checked by both apps
 - `apps/macos/Salat/Core`: Swift ports of methods/prayer math, scheduler, strings, settings
-- `apps/macos/Salat/{Services,Quran,UI}`: location, adhan alerts, Quran reader/player, SwiftUI views
+- `apps/macos/Salat/{Services,Quran,Adhkar,UI}`: location, adhan alerts, Quran reader/player, Hisn al-Muslim adhkar (text + cached audio), SwiftUI views
 - `apps/macos/project.yml`: XcodeGen spec (no `.xcodeproj` committed). The test target compiles the pure sources directly (no app host); add new pure files there too.
 - `apps/macos/Salat/Resources/ATTRIBUTION.md`: licenses of the bundled Quran text, font, adhans, borders, cities
 
@@ -38,4 +39,4 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - Parity rule: changing `methods.ts`/`paramsFor` → port it to `Core/Methods.swift`, then `UPDATE_MAC_DATA=1 npm test` (regenerates `fixtures/parity.json` and the Mac's borders/cities resources) and `npm run mac:test`.
 - Per-country method config is data in `methods.ts` / `Methods.swift`; adding a country is one entry in each.
 - Times are formatted in the device's/subscription's IANA time zone, never UTC.
-- No accounts, analytics, or third-party client calls. Exception: the Mac app downloads recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and caches them offline.
+- No accounts, analytics, or third-party client calls. Exceptions: the Mac app downloads recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and adhkar audio from `www.hisnmuslim.com`, caching both offline.

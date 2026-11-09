@@ -21,6 +21,9 @@ final class AppSettings {
         var lastSurah = 1
         var lastAyah = 1
         var openAtLoginInitialized = false
+        // Fields added later are optional so older saved settings still decode.
+        var loginItemPath: String? = nil
+        var lastAdhkarChapter: Int? = nil
     }
 
     private static let key = "settings.v1"
@@ -33,4 +36,9 @@ final class AppSettings {
     }
 
     private func save() { defaults.set(try? JSONEncoder().encode(d), forKey: Self.key) }
+}
+
+/// The login item points at the app's path when it was registered; after moving the app (e.g. into /Applications) re-register.
+func loginItemNeedsRefresh(registeredPath: String?, currentPath: String, enabled: Bool) -> Bool {
+    enabled && registeredPath != currentPath
 }

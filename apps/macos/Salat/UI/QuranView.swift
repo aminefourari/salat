@@ -151,6 +151,7 @@ private struct SurahView: View {
 struct QuranSettingsTab: View {
     @Bindable var settings: AppSettings
     let player: QuranPlayer
+    let adhkar: AdhkarPlayer
     @State private var refresh = 0
     var lang: Lang { settings.d.lang }
 
@@ -185,6 +186,7 @@ struct QuranSettingsTab: View {
                     }
                 }
             }
+            AdhkarAudioSection(player: adhkar, lang: lang)
         }
         .formStyle(.grouped)
     }

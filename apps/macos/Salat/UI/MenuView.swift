@@ -63,6 +63,7 @@ struct MenuView: View {
             Divider()
             HStack {
                 Button(t(.quran, lang), systemImage: "book") { show { openWindow(id: "quran") } }
+                Button(t(.adhkar, lang), systemImage: "hands.and.sparkles") { show { openWindow(id: "adhkar") } }
                 Spacer()
                 Button(t(.settings, lang)) { show { openSettings() } }
                 Button(t(.quit, lang), systemImage: "power") { NSApp.terminate(nil) }.labelStyle(.iconOnly)

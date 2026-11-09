@@ -73,3 +73,12 @@ final class AdhkarAudioStoreTests: XCTestCase {
         XCTAssertEqual(s.size(), 0)
     }
 }
+
+final class LoginItemTests: XCTestCase {
+    func testLoginItemNeedsRefresh() {
+        XCTAssertTrue(loginItemNeedsRefresh(registeredPath: "/a", currentPath: "/b", enabled: true))
+        XCTAssertTrue(loginItemNeedsRefresh(registeredPath: nil, currentPath: "/b", enabled: true))
+        XCTAssertFalse(loginItemNeedsRefresh(registeredPath: "/a", currentPath: "/a", enabled: true))
+        XCTAssertFalse(loginItemNeedsRefresh(registeredPath: nil, currentPath: "/b", enabled: false))
+    }
+}
