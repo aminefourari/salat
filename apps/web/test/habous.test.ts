@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { computeDay, formatHM } from '../src/lib/prayer'
+import { computeDay, formatHM, type DayTimes } from '../src/lib/prayer'
 import { habousDayTimes, type Row } from '../src/server/cron'
-import { habousCity, habousDay, parseMonth } from '../src/server/habous'
+import { habousCity, habousDay, habousDays, parseMonth, type HabousStore, type StoredRow } from '../src/server/habous'
 
 // Real Habous file for 2026-11, trimmed to Rabat (1) and Casablanca (58).
 const text = readFileSync(new URL('./fixtures/habous-2026-11.js', import.meta.url), 'utf8')
@@ -36,18 +36,41 @@ describe('habous', () => {
     expect(formatHM(day.fajr, TZ)).toMatch(/^0[5-7]:\d{2}$/)
   })
 
-  it('gives cron the official times for Moroccan subscribers only', async () => {
-    const fetch = vi.fn(async () => new Response(text))
+  it('imports a month from Habous once, then serves it from the store; cron uses it for Moroccan subscribers only', async () => {
+    const fetch = vi.fn(async (url: string) => (url.includes('2026-11') ? new Response(text) : new Response('', { status: 503 })))
     vi.stubGlobal('fetch', fetch)
+    const store = memStore()
+    const dayTimes = habousDayTimes(store)
     const row = (lat: number, lon: number, asr = 'standard'): Row => ({
       endpoint: 'e', p256dh: '', auth: '', lat, lon, tz: TZ, method: 'auto', asr, lang: 'fr',
       notify_start: 1, notify_reminder: 1, last_sent_at: 0, updated_at: 0,
     })
     const now = new Date('2026-11-11T12:00:00Z')
-    const times = (await habousDayTimes(row(CASA.lat, CASA.lon), now))!
+    const times = (await dayTimes(row(CASA.lat, CASA.lon), now))!
     expect(times('2026-11-11')).toEqual(habousDay(parseMonth(text)!, 58, '2026-11-11'))
-    expect(await habousDayTimes(row(CASA.lat, CASA.lon, 'hanafi'), now)).toBeUndefined()
-    expect(await habousDayTimes(row(31.0, -4.0), now)).toBeUndefined() // desert, no city near
-    expect(fetch).toHaveBeenCalledTimes(1) // month memoised
+    expect(store.rows.size).toBe(2 * 30) // both cities of the fixture, every day
+    await dayTimes(row(34.02, -6.84), now) // Rabat, same month: no new fetch
+    expect(await dayTimes(row(CASA.lat, CASA.lon, 'hanafi'), now)).toBeUndefined()
+    expect(await dayTimes(row(31.0, -4.0), now)).toBeUndefined() // desert, no city near
+    expect(fetch).toHaveBeenCalledTimes(1)
+
+    // December isn't published: calculated (null), and Habous isn't asked again for 10 minutes.
+    expect(await habousDays(store, CASA.lat, CASA.lon, ['2026-12-01'])).toBeNull()
+    expect(await habousDays(store, CASA.lat, CASA.lon, ['2026-12-01'])).toBeNull()
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 })
+
+function memStore(): HabousStore & { rows: Map<string, StoredRow> } {
+  const months = new Set<string>(), rows = new Map<string, StoredRow>()
+  const keys = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
+  return {
+    rows,
+    hasMonth: async ym => months.has(ym),
+    putMonth: async (ym, rs) => { months.add(ym); for (const r of rs) rows.set(`${r[0]} ${r[1]}`, r) },
+    days: async (city, dates) => new Map(dates.flatMap(d => {
+      const r = rows.get(`${city} ${d}`)
+      return r ? [[d, Object.fromEntries(keys.map((k, i) => [k, new Date(r[i + 2])])) as DayTimes]] : []
+    })),
+  }
+}

@@ -156,24 +156,38 @@ export function setNotify(n: Notify) { write(KEYS.notify, n); syncPush().catch((
 // ---- day times ----
 
 
-type Habous = { key: string; days: Record<string, number[]> }
+/** Official Habous days for one place (YYYY-MM-DD → epoch ms), fetched a month at a time; `none` = no Habous city near. */
+type Habous = { place: string; days: Record<string, number[]>; none?: boolean }
 const HABOUS_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
 const toDay = (ms: number[]) => Object.fromEntries(HABOUS_KEYS.map((k, i) => [k, new Date(ms[i])])) as DayTimes
+const NO_HABOUS: Habous = { place: '', days: {} }
 
-/** Official Habous times for Morocco from our Worker; the last answer is kept for offline use. */
+/** Official Habous times for Morocco: asks our Worker for a whole month once, then reads it locally (and offline). */
 function useHabous(loc: Loc | null, s: Settings, date: string): Habous['days'] | null {
   const on = !!loc && usesHabous(loc.lat, loc.lon, s)
-  const key = on ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)},${date}` : ''
-  const saved = useStored<Habous>('salat.habous', { key: '', days: {} }, { key: '', days: {} })[0]
+  const place = on ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}` : ''
+  const saved = useStored<Habous>('salat.habous', NO_HABOUS, NO_HABOUS)[0]
+  const mine = saved.place === place
+  // The month still missing for today or tomorrow, if any.
+  const tomorrow = nextDate(date)
+  const month = !place || (mine && saved.none) ? '' : !(mine && saved.days[date]) ? date.slice(0, 7) : !saved.days[tomorrow] ? tomorrow.slice(0, 7) : ''
   useEffect(() => {
-    if (!key || saved.key === key) return
-    const [lat, lon] = key.split(',')
-    fetch(`/api/habous?lat=${lat}&lon=${lon}&date=${date}`)
-      .then((r): Promise<Pick<Habous, 'days'>> => (r.ok ? r.json() : r.status === 404 ? Promise.resolve({ days: {} }) : Promise.reject()))
-      .then(({ days }) => write<Habous>('salat.habous', { key, days }))
+    if (!month) return
+    const [lat, lon] = place.split(',')
+    fetch(`/api/habous?lat=${lat}&lon=${lon}&month=${month}`)
+      .then(async r => {
+        if (r.status === 404) return write<Habous>('salat.habous', { place, days: {}, none: true })
+        if (!r.ok) return // Habous down or month not published yet: calculated meanwhile, asked again next open
+        const { days } = (await r.json()) as Pick<Habous, 'days'>
+        const cur = read<Habous>('salat.habous', NO_HABOUS)
+        // Same place: keep what we have from yesterday on, add the new month. Another place: start over.
+        const yesterday = new Date(Date.parse(`${date}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+        const kept = cur.place === place ? Object.fromEntries(Object.entries(cur.days).filter(([d]) => d >= yesterday)) : {}
+        write<Habous>('salat.habous', { place, days: { ...kept, ...days } })
+      })
       .catch(() => {})
-  }, [key, saved.key, date])
-  return on ? saved.days : null
+  }, [place, month, date])
+  return on && mine ? saved.days : null
 }
 
 /** Today's and tomorrow's times for the saved location, in this device's time zone; `official` when from Habous. */

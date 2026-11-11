@@ -2,7 +2,7 @@ import { t } from '../lib/i18n'
 import type { MethodId } from '../lib/methods'
 import { dateIn, formatHM, nextDate, usesHabous, type DayTimes, type Lang, type Settings } from '../lib/prayer'
 import { dueEvents, type Sub } from '../lib/schedule'
-import { habousDays } from './habous'
+import { habousDays, type HabousStore } from './habous'
 
 export type Row = {
   endpoint: string; p256dh: string; auth: string; lat: number; lon: number; tz: string
@@ -20,12 +20,12 @@ export type Store = {
 export type DayTimesFor = (row: Row, now: Date) => Promise<((date: string) => DayTimes | null) | undefined>
 
 /** Morocco rows use the official timetable for yesterday..tomorrow (dueEvents' window); calculated otherwise. */
-export const habousDayTimes: DayTimesFor = async (row, now) => {
+export const habousDayTimes = (store: HabousStore): DayTimesFor => async (row, now) => {
   const sub = toSub(row)
   if (!usesHabous(sub.lat, sub.lon, sub.settings)) return undefined
   const today = dateIn(now, sub.tz)
   const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
-  const days = await habousDays(sub.lat, sub.lon, [yesterday, today, nextDate(today)])
+  const days = await habousDays(store, sub.lat, sub.lon, [yesterday, today, nextDate(today)])
   return days ? date => days.get(date) ?? null : undefined
 }
 

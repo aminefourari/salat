@@ -27,7 +27,16 @@ final class HabousTests: XCTestCase {
                        ["2026-11-12"])
         XCTAssertTrue(usesHabous(method: .morocco, asr: .standard))
         XCTAssertFalse(usesHabous(method: .morocco, asr: .hanafi))
-        XCTAssertEqual(habousURL(place: place, date: "2026-11-11").absoluteString,
-                       "https://salat.aminethewiz18.workers.dev/api/habous?lat=33.573&lon=-7.590&date=2026-11-11")
+        XCTAssertEqual(habousURL(place: place, month: "2026-11").absoluteString,
+                       "https://salat.aminethewiz18.workers.dev/api/habous?lat=33.573&lon=-7.590&month=2026-11")
+    }
+
+    func testFetchesOnlyTheMissingMonth() {
+        let d = { (m: Int, day: Int) in DateComponents(year: 2026, month: m, day: day) }
+        let nov = HabousDays(place: place, days: Dictionary(uniqueKeysWithValues: (1...30).map { (String(format: "2026-11-%02d", $0), [Double](repeating: 0, count: 6)) }))
+        XCTAssertEqual(habousMonthToFetch(nil, place: place, today: d(11, 11), tomorrow: d(11, 12)), "2026-11")
+        XCTAssertNil(habousMonthToFetch(nov, place: place, today: d(11, 11), tomorrow: d(11, 12))) // cached: no request
+        XCTAssertEqual(habousMonthToFetch(nov, place: place, today: d(11, 30), tomorrow: d(12, 1)), "2026-12")
+        XCTAssertEqual(habousMonthToFetch(nov, place: "34.020,-6.840", today: d(11, 11), tomorrow: d(11, 12)), "2026-11")
     }
 }

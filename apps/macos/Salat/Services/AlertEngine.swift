@@ -85,16 +85,17 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         for (e, late) in due { fire(e, late: late) }
     }
 
-    /// Asks the Worker for today's and tomorrow's official times when the cache lacks today.
-    /// Retries every 10 min on failure; a 404 (no Habous city within 25 km) stops it until the place or day changes.
+    /// Asks the Worker for a whole month when today or tomorrow isn't cached yet, so it asks about once a month.
+    /// Retries every 10 min on failure (Habous down, next month not published); a 404 (no Habous city
+    /// within 25 km) stops it for that place and month.
     private func refreshHabous(place: String, dates: [DateComponents]) {
-        let today = isoDate(dates[1]), key = "\(place) \(today)"
-        if habousDay(settings.d.habous, place: place, date: dates[1]) != nil { return }
+        guard let month = habousMonthToFetch(settings.d.habous, place: place, today: dates[1], tomorrow: dates[2]) else { return }
+        let key = "\(place) \(month)"
         if let a = habousAsked, a.key == key, a.final || now.timeIntervalSince(a.at) < 600 { return }
         habousAsked = (key, now, false)
         let yesterday = isoDate(dates[0])
         Task { [weak self] in
-            guard let (data, res) = try? await URLSession.shared.data(from: habousURL(place: place, date: today)),
+            guard let (data, res) = try? await URLSession.shared.data(from: habousURL(place: place, month: month)),
                   let status = (res as? HTTPURLResponse)?.statusCode else { return }
             guard let self else { return }
             if status == 404 { habousAsked = (key, habousAsked?.at ?? now, true); return }

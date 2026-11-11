@@ -58,47 +58,86 @@ export function habousDay(month: HabousMonth, city: number, date: string): DayTi
 }
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
-// ponytail: a parsed month lives as long as the isolate; Habous corrections show up when it recycles.
-const memo = new Map<string, Promise<HabousMonth | null>>()
+const KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
+/** One stored day: city, YYYY-MM-DD, then the six times in epoch ms. */
+export type StoredRow = [number, string, number, number, number, number, number, number]
 
-/** Month file for `YYYY-MM`, via the Workers cache (24 h) and an in-isolate memo; null when unavailable. */
-export function loadMonth(ym: string): Promise<HabousMonth | null> {
-  let p = memo.get(ym)
-  if (!p) {
-    p = fetchMonth(ym).then(m => { if (!m) memo.delete(ym); return m })
-    memo.set(ym, p)
-  }
-  return p
+/** Where imported months live (D1 in the Worker, memory in tests). */
+export type HabousStore = {
+  hasMonth(month: string): Promise<boolean>
+  putMonth(month: string, rows: StoredRow[]): Promise<void>
+  days(city: number, dates: string[]): Promise<Map<string, DayTimes>>
+}
+
+/** All rows of a parsed month file, every city. */
+export function monthRows(ym: string, month: HabousMonth): StoredRow[] {
+  const out: StoredRow[] = []
+  for (const [city, rows] of month.cities)
+    rows.forEach((_, i) => {
+      const date = `${ym}-${String(i + 1).padStart(2, '0')}`
+      const d = habousDay(month, city, date)!
+      out.push([city, date, ...KEYS.map(k => d[k].getTime())] as StoredRow)
+    })
+  return out
 }
 
 async function fetchMonth(ym: string): Promise<HabousMonth | null> {
-  const url = `https://www.habous.gov.ma/data/horaires-${ym}.js`
-  const key = new Request(url)
-  const cache = typeof caches === 'undefined' ? undefined : (caches as unknown as { default: Cache }).default
   try {
-    const hit = await cache?.match(key)
-    if (hit) return parseMonth(await hit.text())
-    const res = await fetch(url, { headers: { 'user-agent': UA } })
-    if (!res.ok) return null
-    const text = await res.text()
-    const month = parseMonth(text)
-    if (month) await cache?.put(key, new Response(text, { headers: { 'cache-control': 'public, max-age=86400' } }))
-    return month
+    const res = await fetch(`https://www.habous.gov.ma/data/horaires-${ym}.js`, { headers: { 'user-agent': UA } })
+    return res.ok ? parseMonth(await res.text()) : null
   } catch (err) {
     console.error('habous fetch failed', ym, err)
     return null
   }
 }
 
-/** Official times for each of `dates` near (lat, lon); null when no Habous city is near or the data is missing. */
-export async function habousDays(lat: number, lon: number, dates: string[]): Promise<Map<string, DayTimes> | null> {
+const RETRY_MS = 10 * 60_000
+const stored = new Set<string>() // months known to be in the store (skips a query per request)
+const importing = new Map<string, Promise<boolean>>()
+const failedAt = new Map<string, number>()
+
+/** Makes sure `ym` is in the store: fetched from Habous once, then never again. Failures retry after 10 min. */
+// ponytail: a stored month is never refreshed; to take a Habous correction, DELETE its habous_months row.
+export function ensureMonth(store: HabousStore, ym: string): Promise<boolean> {
+  if (stored.has(ym)) return Promise.resolve(true)
+  let p = importing.get(ym)
+  if (!p) {
+    p = (async () => {
+      if (await store.hasMonth(ym)) return true
+      if (Date.now() - (failedAt.get(ym) ?? -Infinity) < RETRY_MS) return false
+      const month = await fetchMonth(ym)
+      if (!month) { failedAt.set(ym, Date.now()); return false }
+      await store.putMonth(ym, monthRows(ym, month))
+      return true
+    })().then(ok => { if (ok) stored.add(ym); return ok }).finally(() => importing.delete(ym))
+    importing.set(ym, p)
+  }
+  return p
+}
+
+/** Official times for each of `dates` near (lat, lon); null when no Habous city is near or none is available. */
+export async function habousDays(store: HabousStore, lat: number, lon: number, dates: string[]): Promise<Map<string, DayTimes> | null> {
   const city = habousCity(lat, lon)
   if (city == null) return null
-  const out = new Map<string, DayTimes>()
-  for (const date of dates) {
-    const month = await loadMonth(date.slice(0, 7))
-    const day = month && habousDay(month, city, date)
-    if (day) out.set(date, day)
-  }
+  for (const ym of new Set(dates.map(d => d.slice(0, 7)))) await ensureMonth(store, ym)
+  const out = await store.days(city, dates)
   return out.size ? out : null
 }
+
+export const d1HabousStore = (db: D1Database): HabousStore => ({
+  hasMonth: async ym => !!(await db.prepare('SELECT 1 FROM habous_months WHERE month = ?').bind(ym).first()),
+  putMonth: async (ym, rows) => {
+    // One statement for the whole month (~5,700 rows) via json_each, in the same transaction as the month marker.
+    const cols = ['city', 'date', ...KEYS]
+    await db.batch([
+      db.prepare(`INSERT OR REPLACE INTO habous_times (${cols.join(', ')})
+        SELECT ${cols.map((_, i) => `json_extract(value, '$[${i}]')`).join(', ')} FROM json_each(?)`).bind(JSON.stringify(rows)),
+      db.prepare('INSERT OR REPLACE INTO habous_months (month, fetched_at) VALUES (?, ?)').bind(ym, Date.now()),
+    ])
+  },
+  days: async (city, dates) => {
+    const { results } = await db.prepare(`SELECT * FROM habous_times WHERE city = ? AND date IN (${dates.map(() => '?').join(', ')})`)
+      .bind(city, ...dates).all<Record<string, number> & { date: string }>()
+    return new Map(results.map(r => [r.date, Object.fromEntries(KEYS.map(k => [k, new Date(r[k])])) as DayTimes]))
+  },
+})

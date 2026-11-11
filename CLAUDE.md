@@ -43,6 +43,6 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - Parity rule: changing `methods.ts`/`paramsFor` → port it to `Core/Methods.swift`, then `UPDATE_MAC_DATA=1 npm test` (regenerates `fixtures/parity.json` and the Mac's borders/cities resources) and `npm run mac:test`.
 - Per-country method config is data in `methods.ts` / `Methods.swift`; adding a country is one entry in each.
 - Times are formatted in the device's/subscription's IANA time zone, never UTC.
-- Morocco (method `morocco`, standard Asr): official Habous times from the Worker's `/api/habous` (web `useDays`, cron, Mac `AlertEngine` + `Core/Habous.swift`); the 19°/17° calculation is the fallback.
+- Morocco (method `morocco`, standard Asr): official Habous times, imported once per month from habous.gov.ma into D1 (`habous_times`, `server/habous.ts`) and served by the Worker's `/api/habous?month=` (clients fetch a month and keep it) (web `useDays`, cron, Mac `AlertEngine` + `Core/Habous.swift`); the 19°/17° calculation is the fallback.
 - No accounts, analytics, or third-party client calls. Exceptions (audio only): recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and adhkar audio from `www.hisnmuslim.com`. The Mac app caches them offline; the website streams them directly from the browser (user decision).
 - UI changes on the Mac: check them with `Salat.app/Contents/MacOS/Salat -snapshot DIR` (renders the menu and each window section: times, Quran, adhkar, in dark and light) and refresh `docs/screenshots/`.
