@@ -26,6 +26,8 @@ enum L10nKey: String, CaseIterable, Sendable {
     case adhkar, adhkarAudio, searchCategory, chooseCategory, stopAudio, addAdhan
     case notifAdhkarMorning, notifAdhkarEvening, notifKahf, notifJumuah, notifyAdhkar, notifyFriday
     case adjustments, adjustHint, hijriOffset, hijriAuto, days, ramadan, imsak, iftar
+    case updates, version, checkForUpdates, checkAutomatically, upToDate, updateAvailable, installUpdate, installing
+    case updateFailed, updateCorrupt, updateNotWritable
 }
 
 private let en: [L10nKey: String] = [
@@ -59,6 +61,11 @@ private let en: [L10nKey: String] = [
     .adjustments: "Adjust times (minutes)", .adjustHint: "Add or remove minutes to match your mosque.",
     .hijriOffset: "Hijri date", .hijriAuto: "Automatic ({n})", .days: "{n} days",
     .ramadan: "Ramadan", .imsak: "Imsak", .iftar: "Iftar",
+    .updates: "Updates", .version: "Version {v}", .checkForUpdates: "Check for updates", .checkAutomatically: "Check for updates automatically",
+    .upToDate: "Salat is up to date.", .updateAvailable: "Salat {v} is available", .installUpdate: "Install and relaunch",
+    .installing: "Installing…", .updateFailed: "Couldn't check for updates. Try again later.",
+    .updateCorrupt: "The download was damaged, so it wasn't installed. Try again.",
+    .updateNotWritable: "Salat can't replace itself in this folder. Move it to Applications, or download the update from GitHub.",
 ]
 
 private let fr: [L10nKey: String] = [
@@ -92,6 +99,11 @@ private let fr: [L10nKey: String] = [
     .adjustments: "Ajuster les horaires (minutes)", .adjustHint: "Ajoutez ou retirez des minutes pour suivre votre mosquée.",
     .hijriOffset: "Date hégirienne", .hijriAuto: "Automatique ({n})", .days: "{n} jours",
     .ramadan: "Ramadan", .imsak: "Imsak", .iftar: "Iftar",
+    .updates: "Mises à jour", .version: "Version {v}", .checkForUpdates: "Rechercher des mises à jour", .checkAutomatically: "Rechercher automatiquement les mises à jour",
+    .upToDate: "Salat est à jour.", .updateAvailable: "Salat {v} est disponible", .installUpdate: "Installer et relancer",
+    .installing: "Installation…", .updateFailed: "Impossible de rechercher les mises à jour. Réessayez plus tard.",
+    .updateCorrupt: "Le téléchargement était endommagé : rien n’a été installé. Réessayez.",
+    .updateNotWritable: "Salat ne peut pas se remplacer dans ce dossier. Placez-le dans Applications, ou téléchargez la mise à jour sur GitHub.",
 ]
 
 private let ar: [L10nKey: String] = [
@@ -125,6 +137,11 @@ private let ar: [L10nKey: String] = [
     .adjustments: "تعديل المواقيت (بالدقائق)", .adjustHint: "أضف أو أنقص دقائق لتوافق مسجدك.",
     .hijriOffset: "التاريخ الهجري", .hijriAuto: "تلقائي ({n})", .days: "{n} أيام",
     .ramadan: "رمضان", .imsak: "الإمساك", .iftar: "الإفطار",
+    .updates: "التحديثات", .version: "الإصدار {v}", .checkForUpdates: "البحث عن تحديثات", .checkAutomatically: "البحث عن التحديثات تلقائيًا",
+    .upToDate: "Salat محدّث.", .updateAvailable: "الإصدار {v} من Salat متاح", .installUpdate: "تثبيت وإعادة التشغيل",
+    .installing: "جارٍ التثبيت…", .updateFailed: "تعذّر البحث عن التحديثات. أعد المحاولة لاحقًا.",
+    .updateCorrupt: "التنزيل تالف، فلم يُثبَّت. أعد المحاولة.",
+    .updateNotWritable: "لا يستطيع Salat استبدال نفسه في هذا المجلد. انقله إلى مجلد التطبيقات، أو نزّل التحديث من GitHub.",
 ]
 
 private let dict: [Lang: [L10nKey: String]] = [.en: en, .fr: fr, .ar: ar]

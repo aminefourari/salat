@@ -6,6 +6,7 @@ struct SalatApp: App {
     @State private var engine: AlertEngine
     @State private var quran: QuranPlayer
     @State private var adhkar: AdhkarPlayer
+    @State private var updater: Updater
 
     init() {
         let settings = AppSettings()
@@ -38,15 +39,16 @@ struct SalatApp: App {
         _engine = State(initialValue: engine)
         _quran = State(initialValue: quran)
         _adhkar = State(initialValue: adhkar)
+        _updater = State(initialValue: Updater(settings: settings))
     }
 
     var body: some Scene {
-        MenuBarExtra { MenuView(engine: engine) } label: { MenuLabel(engine: engine) }
+        MenuBarExtra { MenuView(engine: engine, updater: updater) } label: { MenuLabel(engine: engine) }
             .menuBarExtraStyle(.window)
-        Window("Salat", id: "main") { MainView(engine: engine, quran: quran, adhkar: adhkar) }
+        Window("Salat", id: "main") { MainView(engine: engine, quran: quran, adhkar: adhkar, updater: updater) }
             .defaultSize(width: 900, height: 700)
             .defaultLaunchBehavior(Snapshots.launch)
             .commands { SectionCommands(lang: engine.settings.d.lang) }
-        Settings { SettingsView(engine: engine, quran: quran, adhkar: adhkar) }
+        Settings { SettingsView(engine: engine, quran: quran, adhkar: adhkar, updater: updater) }
     }
 }

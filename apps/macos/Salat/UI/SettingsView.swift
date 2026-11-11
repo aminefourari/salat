@@ -5,12 +5,13 @@ struct SettingsView: View {
     let engine: AlertEngine
     let quran: QuranPlayer
     let adhkar: AdhkarPlayer
+    let updater: Updater
     var settings: AppSettings { engine.settings }
     var lang: Lang { settings.d.lang }
 
     var body: some View {
         TabView {
-            Tab(t(.general, lang), systemImage: "gearshape") { GeneralTab(settings: settings) }
+            Tab(t(.general, lang), systemImage: "gearshape") { GeneralTab(settings: settings, updater: updater) }
             Tab(t(.prayerTimes, lang), systemImage: "clock") { PrayerTab(engine: engine) }
             Tab(t(.alerts, lang), systemImage: "speaker.wave.2") { AlertsTab(engine: engine) }
             Tab(t(.quran, lang), systemImage: "book") { QuranSettingsTab(settings: settings, player: quran, adhkar: adhkar) }
@@ -24,6 +25,7 @@ struct SettingsView: View {
 
 private struct GeneralTab: View {
     @Bindable var settings: AppSettings
+    let updater: Updater
     @State private var atLogin = SMAppService.mainApp.status == .enabled
     var lang: Lang { settings.d.lang }
 
@@ -39,6 +41,7 @@ private struct GeneralTab: View {
                     atLogin = SMAppService.mainApp.status == .enabled
                 }
             Toggle(t(.menuBarIconOnly, lang), isOn: $settings.d.iconOnly)
+            UpdatesSection(settings: settings, updater: updater)
         }
         .formStyle(.grouped)
     }
@@ -235,5 +238,38 @@ private struct QiblaTab: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct UpdatesSection: View {
+    @Bindable var settings: AppSettings
+    let updater: Updater
+    var lang: Lang { settings.d.lang }
+
+    var body: some View {
+        Section(t(.updates, lang)) {
+            LabeledContent(t(.version, lang, ["v": updater.current])) {
+                switch updater.state {
+                case .checking, .installing: ProgressView().controlSize(.small)
+                case .downloading(_, let p): ProgressView(value: p).frame(width: 120)
+                default: Button(t(.checkForUpdates, lang)) { Task { await updater.check() } }
+                }
+            }
+            switch updater.state {
+            case .upToDate: Text(t(.upToDate, lang)).foregroundStyle(.secondary)
+            case .failed(let msg): Text(msg).foregroundStyle(.orange)
+            case .installing: Text(t(.installing, lang)).foregroundStyle(.secondary)
+            case .available(let info), .downloading(let info, _):
+                HStack {
+                    Text(t(.updateAvailable, lang, ["v": info.version])).bold()
+                    Spacer()
+                    if case .available = updater.state {
+                        Button(t(.installUpdate, lang)) { updater.install() }.buttonStyle(GoldButtonStyle())
+                    }
+                }
+            default: EmptyView()
+            }
+            Toggle(t(.checkAutomatically, lang), isOn: Binding(get: { settings.d.autoUpdateCheck != false }, set: { settings.d.autoUpdateCheck = $0 }))
+        }
     }
 }

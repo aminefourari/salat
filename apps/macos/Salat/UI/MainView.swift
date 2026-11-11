@@ -13,6 +13,7 @@ struct MainView: View {
     let engine: AlertEngine
     let quran: QuranPlayer
     let adhkar: AdhkarPlayer
+    let updater: Updater
     @AppStorage("section") private var section = AppSection.prayer
 
     var lang: Lang { engine.settings.d.lang }
@@ -22,7 +23,7 @@ struct MainView: View {
             switch section {
             case .prayer:
                 ScrollView {
-                    MenuView(engine: engine)
+                    MenuView(engine: engine, updater: updater)
                         .clipShape(.rect(cornerRadius: 20))
                         .frame(maxWidth: .infinity).padding(24)
                 }

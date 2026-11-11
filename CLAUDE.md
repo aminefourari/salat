@@ -35,6 +35,7 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `apps/macos/Salat/Core`: Swift ports of methods/prayer math, scheduler, strings, settings
 - `apps/macos/Salat/{Services,Quran,Adhkar,UI}`: location, adhan alerts, Quran reader/player, Hisn al-Muslim adhkar (text + cached audio), SwiftUI views
 - `apps/macos/Widget`: WidgetKit extension (sandboxed). It computes nothing: `AlertEngine` writes `~/Library/Application Support/Salat/widget.json` (`Core/WidgetData.swift`) and the widget reads it through a read-only sandbox exception (no App Group without a signing team). Entitlements live in `project.yml`; XcodeGen rewrites the `.entitlements` file
+- Mac updates: `Services/Updater.swift` asks the Worker's `/api/update` (`server/update.ts`, the latest GitHub Release with its asset SHA-256), downloads `?v=X.Y.Z` through the Worker, checks SHA-256 + `codesign --verify` + bundle id/version, then a detached `sh` swaps the bundle after the app quits and relaunches it. A release (tag `vX.Y.Z`) is what users get; the asset must be named `Salat-vX.Y.Z.zip`
 - `apps/macos/project.yml`: XcodeGen spec (no `.xcodeproj` committed). The test target compiles the pure sources directly (no app host); add new pure files there too.
 - `apps/macos/Salat/Resources/ATTRIBUTION.md`: licenses of the bundled Quran text, font, adhans, borders, cities
 

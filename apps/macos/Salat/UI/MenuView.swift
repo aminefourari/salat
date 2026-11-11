@@ -21,6 +21,7 @@ struct MenuLabel: View {
 
 struct MenuView: View {
     let engine: AlertEngine
+    var updater: Updater? = nil
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
     @AppStorage("section") private var section = AppSection.prayer
@@ -50,6 +51,10 @@ struct MenuView: View {
             }
             if engine.player.isPlaying {
                 Button(t(.stop, lang), systemImage: "stop.fill") { engine.player.stop() }.buttonStyle(GoldButtonStyle())
+            }
+            if let u = updater, let info = u.available {
+                Button(t(.updateAvailable, lang, ["v": info.version]), systemImage: "arrow.down.circle") { show { openSettings() } }
+                    .buttonStyle(GoldOutlineButtonStyle())
             }
             HStack(spacing: 8) {
                 Button(t(.quran, lang), systemImage: "book") { show { section = .quran; openWindow(id: "main") } }.buttonStyle(GoldButtonStyle()).fixedSize()
