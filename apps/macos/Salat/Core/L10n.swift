@@ -24,6 +24,8 @@ enum L10nKey: String, CaseIterable, Sendable {
     case location, automatic, manualCity, searchCity, locationDenied, noLocation
     case play, pause, previous, nextAyah, chooseSurah, cancel, ayahCount
     case adhkar, adhkarAudio, searchCategory, chooseCategory, stopAudio, addAdhan
+    case notifAdhkarMorning, notifAdhkarEvening, notifKahf, notifJumuah, notifyAdhkar, notifyFriday
+    case adjustments, adjustHint, hijriOffset, hijriAuto, days, ramadan, imsak, iftar
 }
 
 private let en: [L10nKey: String] = [
@@ -51,6 +53,12 @@ private let en: [L10nKey: String] = [
     .play: "Play", .pause: "Pause", .previous: "Previous ayah", .nextAyah: "Next ayah", .chooseSurah: "Choose a surah",
     .cancel: "Cancel", .ayahCount: "{n} ayahs",
     .adhkar: "Adhkar", .adhkarAudio: "Adhkar audio", .searchCategory: "Search", .chooseCategory: "Choose a category", .stopAudio: "Stop", .addAdhan: "Add your own…",
+    .notifAdhkarMorning: "Morning adhkar — click to read them", .notifAdhkarEvening: "Evening adhkar — click to read them",
+    .notifKahf: "It's Friday: read Surat al-Kahf — click to open it", .notifJumuah: "Jumuʿah today — Dhuhr at {time}",
+    .notifyAdhkar: "Morning and evening adhkar", .notifyFriday: "Friday: Surat al-Kahf and Jumuʿah",
+    .adjustments: "Adjust times (minutes)", .adjustHint: "Add or remove minutes to match your mosque.",
+    .hijriOffset: "Hijri date", .hijriAuto: "Automatic ({n})", .days: "{n} days",
+    .ramadan: "Ramadan", .imsak: "Imsak", .iftar: "Iftar",
 ]
 
 private let fr: [L10nKey: String] = [
@@ -78,6 +86,12 @@ private let fr: [L10nKey: String] = [
     .play: "Lecture", .pause: "Pause", .previous: "Verset précédent", .nextAyah: "Verset suivant", .chooseSurah: "Choisissez une sourate",
     .cancel: "Annuler", .ayahCount: "{n} versets",
     .adhkar: "Adhkar", .adhkarAudio: "Audio des adhkar", .searchCategory: "Rechercher", .chooseCategory: "Choisissez une catégorie", .stopAudio: "Arrêter", .addAdhan: "Ajouter le vôtre…",
+    .notifAdhkarMorning: "Adhkar du matin — cliquez pour les lire", .notifAdhkarEvening: "Adhkar du soir — cliquez pour les lire",
+    .notifKahf: "C'est vendredi : lisez la sourate al-Kahf — cliquez pour l'ouvrir", .notifJumuah: "Joumouʿa aujourd'hui — Dhuhr à {time}",
+    .notifyAdhkar: "Adhkar du matin et du soir", .notifyFriday: "Vendredi : sourate al-Kahf et Joumouʿa",
+    .adjustments: "Ajuster les horaires (minutes)", .adjustHint: "Ajoutez ou retirez des minutes pour suivre votre mosquée.",
+    .hijriOffset: "Date hégirienne", .hijriAuto: "Automatique ({n})", .days: "{n} jours",
+    .ramadan: "Ramadan", .imsak: "Imsak", .iftar: "Iftar",
 ]
 
 private let ar: [L10nKey: String] = [
@@ -105,6 +119,12 @@ private let ar: [L10nKey: String] = [
     .play: "تشغيل", .pause: "إيقاف مؤقت", .previous: "الآية السابقة", .nextAyah: "الآية التالية", .chooseSurah: "اختر سورة",
     .cancel: "إلغاء", .ayahCount: "{n} آية",
     .adhkar: "الأذكار", .adhkarAudio: "صوتيات الأذكار", .searchCategory: "بحث", .chooseCategory: "اختر بابًا", .stopAudio: "إيقاف", .addAdhan: "إضافة أذان خاص…",
+    .notifAdhkarMorning: "أذكار الصباح — انقر لقراءتها", .notifAdhkarEvening: "أذكار المساء — انقر لقراءتها",
+    .notifKahf: "اليوم الجمعة: اقرأ سورة الكهف — انقر لفتحها", .notifJumuah: "صلاة الجمعة اليوم — الظهر الساعة {time}",
+    .notifyAdhkar: "أذكار الصباح والمساء", .notifyFriday: "الجمعة: سورة الكهف وصلاة الجمعة",
+    .adjustments: "تعديل المواقيت (بالدقائق)", .adjustHint: "أضف أو أنقص دقائق لتوافق مسجدك.",
+    .hijriOffset: "التاريخ الهجري", .hijriAuto: "تلقائي ({n})", .days: "{n} أيام",
+    .ramadan: "رمضان", .imsak: "الإمساك", .iftar: "الإفطار",
 ]
 
 private let dict: [Lang: [L10nKey: String]] = [.en: en, .fr: fr, .ar: ar]

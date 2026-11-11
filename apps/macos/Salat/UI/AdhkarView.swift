@@ -39,6 +39,7 @@ struct AdhkarView: View {
         .themedWindow()
         .navigationTitle(t(.adhkar, lang))
         .onAppear { if selection == nil { selection = settings.d.lastAdhkarChapter ?? AdhkarText.chapters.first?.id } }
+        .onReceive(NotificationCenter.default.publisher(for: .salatOpenSection)) { _ in selection = settings.d.lastAdhkarChapter }
         .onChange(of: selection) { _, id in if let id { settings.d.lastAdhkarChapter = id } }
         .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
     }

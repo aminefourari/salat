@@ -86,10 +86,26 @@ private struct PrayerTab: View {
                     Text(t(.standard, lang)).tag(AsrSchool.standard)
                     Text(t(.hanafi, lang)).tag(AsrSchool.hanafi)
                 }
+                Picker(t(.hijriOffset, lang), selection: $settings.d.hijriOffset) {
+                    Text(t(.hijriAuto, lang, ["n": signed(hijriOffset(method: engine.method, chosen: nil))])).tag(Int?.none)
+                    Divider()
+                    ForEach(-2...2, id: \.self) { n in Text(t(.days, lang, ["n": signed(n)])).tag(Optional(n)) }
+                }
             }
+            Section {
+                ForEach(Prayer.allCases, id: \.self) { p in
+                    let value = Binding(get: { settings.d.adjust?[p] ?? 0 },
+                                        set: { settings.d.adjust = (settings.d.adjust ?? [:]).merging([p: $0]) { $1 } })
+                    Stepper(value: value, in: -maxAdjust...maxAdjust) {
+                        LabeledContent(prayerName(p, lang), value: signed(value.wrappedValue))
+                    }
+                }
+            } header: { Text(t(.adjustments, lang)) } footer: { Text(t(.adjustHint, lang)).font(.caption).foregroundStyle(.secondary) }
         }
         .formStyle(.grouped)
     }
+
+    private func signed(_ n: Int) -> String { n > 0 ? "+\(n)" : "\(n)" }
 
     private var autoMethod: MethodId {
         methodForCountry(engine.loc.flatMap { CountryLookup.shared.code(lat: $0.lat, lon: $0.lon) })
@@ -129,6 +145,8 @@ private struct AlertsTab: View {
                     }
                 }
                 Toggle(t(.notifyReminder, lang), isOn: $settings.d.reminder)
+                Toggle(t(.notifyAdhkar, lang), isOn: Binding(get: { settings.d.adhkarReminder == true }, set: { settings.d.adhkarReminder = $0 }))
+                Toggle(t(.notifyFriday, lang), isOn: Binding(get: { settings.d.fridayReminder == true }, set: { settings.d.fridayReminder = $0 }))
             }
         }
         .formStyle(.grouped)

@@ -24,6 +24,28 @@ func computeDay(lat: Double, lon: Double, date: DateComponents, method: MethodId
     return DayTimes(fajr: r(pt.fajr), sunrise: r(pt.sunrise), dhuhr: r(pt.dhuhr), asr: r(pt.asr), maghrib: r(pt.maghrib), isha: r(pt.isha))
 }
 
+/// Per-prayer offsets are limited to ±30 min (like the website's MAX_ADJUST).
+let maxAdjust = 30
+
+/// `d` with the user's per-prayer minute offsets (local mosque) on top of the calculation or the Habous timetable.
+func adjustDay(_ d: DayTimes, _ adjust: [Prayer: Int]?) -> DayTimes {
+    guard let a = adjust, !a.isEmpty else { return d }
+    func m(_ p: Prayer) -> Date { d[p] + Double(a[p] ?? 0) * 60 }
+    return DayTimes(fajr: m(.fajr), sunrise: d.sunrise, dhuhr: m(.dhuhr), asr: m(.asr), maghrib: m(.maghrib), isha: m(.isha))
+}
+
+/// Days added to the Umm al-Qura date: the user's choice, else −1 in Morocco (sighting usually a day after Makkah).
+func hijriOffset(method: MethodId, chosen: Int?) -> Int { chosen ?? (method == .morocco ? -1 : 0) }
+
+/// Hijri month (9 = Ramadan) of `d` shifted by `offset` days.
+func hijriMonth(_ d: Date, offset: Int) -> Int {
+    var cal = Calendar(identifier: .islamicUmmAlQura); cal.timeZone = .autoupdatingCurrent
+    return cal.component(.month, from: d + Double(offset) * 86_400)
+}
+
+/// Imsak: the customary 10 minutes before Fajr, when suhoor stops.
+func imsak(_ d: DayTimes) -> Date { d.fajr - 600 }
+
 /// adhan-js `roundedMinute`: `.up` always adds (60 − seconds), so an exact :00 still moves to the next minute.
 func jsRoundedMinute(_ t: Date, _ rounding: Rounding) -> Date {
     let sec = Int(t.timeIntervalSince1970.rounded(.down)) % 60

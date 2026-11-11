@@ -2,11 +2,19 @@ import SwiftUI
 
 struct MenuLabel: View {
     let engine: AlertEngine
+    @Environment(\.openWindow) private var openWindow
     var body: some View {
-        if engine.settings.d.iconOnly || engine.next == nil {
-            Image(systemName: "moon.stars")
-        } else if let n = engine.next {
-            Text("\(prayerName(n.prayer, engine.settings.d.lang)) · \(countdown(n.at.timeIntervalSince(engine.now)))")
+        Group {
+            if engine.settings.d.iconOnly || engine.next == nil {
+                Image(systemName: "moon.stars")
+            } else if let n = engine.next {
+                Text("\(prayerName(n.prayer, engine.settings.d.lang)) · \(countdown(n.at.timeIntervalSince(engine.now)))")
+            }
+        }
+        // The label is always alive, so it's where a notification click opens the window.
+        .onReceive(NotificationCenter.default.publisher(for: .salatOpenSection)) { _ in
+            NSApp.activate()
+            openWindow(id: "main")
         }
     }
 }
@@ -65,11 +73,24 @@ struct MenuView: View {
         let greg = engine.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(lang.locale))
         var hijriFmt = Date.FormatStyle(date: .long, time: .omitted, locale: lang.locale, calendar: Calendar(identifier: .islamicUmmAlQura))
         hijriFmt.timeZone = .autoupdatingCurrent
+        let offset = Double(engine.hijriDays) * 86_400
         return VStack(spacing: 1) {
             Text(greg).foregroundStyle(Theme.soft)
-            Text(engine.now.formatted(hijriFmt)).foregroundStyle(Theme.gold)
+            Text((engine.now + offset).formatted(hijriFmt)).foregroundStyle(Theme.gold)
+            if let line = ramadanLine { Text(line).foregroundStyle(Theme.gold).monospacedDigit() }
         }
         .font(Theme.plex(12))
+    }
+
+    /// During Ramadan (from the Maghrib before its first day): the next of imsak or iftar, with its countdown.
+    private var ramadanLine: String? {
+        guard let today = engine.today, let tomorrow = engine.tomorrow else { return nil }
+        let now = engine.now
+        let tonight = now >= today.maghrib ? now + 86_400 : now
+        guard hijriMonth(tonight, offset: engine.hijriDays) == 9 else { return nil }
+        let (key, at): (L10nKey, Date) = now < imsak(today) ? (.imsak, imsak(today))
+            : now < today.maghrib ? (.iftar, today.maghrib) : (.imsak, imsak(tomorrow))
+        return "\(t(.ramadan, lang)) · \(t(key, lang)) \(hm(at)) · \(t(.inTime, lang, ["time": clock(at.timeIntervalSince(now))]))"
     }
 
     /// Next prayer inside the mihrab arch: the one loud element (website `.hero`).

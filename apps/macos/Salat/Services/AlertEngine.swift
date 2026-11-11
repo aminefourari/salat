@@ -21,6 +21,16 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
 
     var sky: Sky { today.map { skyAt($0, now) } ?? .night }
 
+    /// Days added to the Umm al-Qura date shown in the menu.
+    var hijriDays: Int { hijriOffset(method: method, chosen: settings.d.hijriOffset) }
+
+    var extras: Extras {
+        var e: Extras = []
+        if settings.d.adhkarReminder == true { e.insert(.adhkar) }
+        if settings.d.fridayReminder == true { e.insert(.friday) }
+        return e
+    }
+
     var next: (prayer: Prayer, at: Date)? {
         guard let today, let tomorrow else { return nil }
         return nextPrayer(today: today, tomorrow: tomorrow, now: now)
@@ -74,12 +84,12 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         let place = habousPlace(lat: loc.lat, lon: loc.lon)
         if habous { refreshHabous(place: place, dates: dates) }
         let days = dates.map { date in
-            (habous ? habousDay(s.habous, place: place, date: date) : nil)
-                ?? computeDay(lat: loc.lat, lon: loc.lon, date: date, method: method, asr: s.asr)
+            ((habous ? habousDay(s.habous, place: place, date: date) : nil)
+                ?? computeDay(lat: loc.lat, lon: loc.lon, date: date, method: method, asr: s.asr)).map { adjustDay($0, s.adjust) }
         }
         today = days[1]; tomorrow = days[2]
         official = habous && habousDay(s.habous, place: place, date: dates[1]) != nil
-        let due = clock.step(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder, now: now)
+        let due = clock.step(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder, extras: extras, now: now)
         guard !due.isEmpty else { return }
         settings.d.lastAlertHandled = now // persisted so a relaunch doesn't replay these
         for (e, late) in due { fire(e, late: late) }
@@ -109,6 +119,10 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private func fire(_ e: AlertEvent, late: Bool) {
         let lang = settings.d.lang, name = prayerName(e.prayer, lang), time = hm(e.prayerTime)
         switch (e.kind, settings.d.modes[e.prayer] ?? .adhan, late) {
+        case (.adhkarMorning, _, _): notify(t(.notifAdhkarMorning, lang), sound: false, open: .adhkar)
+        case (.adhkarEvening, _, _): notify(t(.notifAdhkarEvening, lang), sound: false, open: .adhkar)
+        case (.kahf, _, _): notify(t(.notifKahf, lang), sound: false, open: .quran)
+        case (.jumuah, _, _): notify(t(.notifJumuah, lang, ["time": time]), sound: false)
         case (.reminder, _, _):
             notify(t(.notifReminder, lang, ["prayer": name, "time": time]), sound: false)
         case (.start, .adhan, false):
@@ -131,10 +145,12 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         c.requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    private func notify(_ body: String, sound: Bool, stoppable: Bool = false) {
+    /// `open`: the window section a click on the notification shows (adhkar, Surat al-Kahf).
+    private func notify(_ body: String, sound: Bool, stoppable: Bool = false, open: AppSection? = nil) {
         let c = UNMutableNotificationContent()
         c.title = "Salat"
         c.body = body
+        if let open { c.userInfo = ["open": open.rawValue] }
         if sound { c.sound = .default }
         if stoppable { c.categoryIdentifier = "ADHAN" }
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: c, trigger: nil))
@@ -146,5 +162,28 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
 
     nonisolated func userNotificationCenter(_ c: UNUserNotificationCenter, didReceive r: UNNotificationResponse) async {
         if r.actionIdentifier == "STOP" { await MainActor.run { player.stop() } }
+        if r.actionIdentifier == UNNotificationDefaultActionIdentifier,
+           let raw = r.notification.request.content.userInfo["open"] as? String, let section = AppSection(rawValue: raw) {
+            await MainActor.run { open(section) }
+        }
     }
+
+    /// Shows Surat al-Kahf or the morning/evening adhkar in the main window (MenuLabel opens it).
+    func open(_ section: AppSection) {
+        switch section {
+        case .quran: if settings.d.lastSurah != 18 { settings.d.lastSurah = 18; settings.d.lastAyah = 1 }
+        case .adhkar: settings.d.lastAdhkarChapter = morningEveningAdhkar
+        case .prayer: break
+        }
+        UserDefaults.standard.set(section.rawValue, forKey: "section")
+        NotificationCenter.default.post(name: .salatOpenSection, object: nil)
+    }
+}
+
+/// Morning and evening adhkar are one chapter of Hisn al-Muslim (data/adhkar.json), like the website's push.
+let morningEveningAdhkar = 27
+
+extension Notification.Name {
+    /// Posted when a notification click should bring up the main window on a section.
+    static let salatOpenSection = Notification.Name("salat.openSection")
 }
