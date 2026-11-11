@@ -74,6 +74,7 @@ function Home() {
         {tonight?.month === 9 && <span className="ramadan">{ramadanLine(days.today, days.tomorrow, now, lang, zone)}</span>}
       </p>
 
+      <div className="today">
       <section className="hero" aria-live="polite">
         <svg className="arch" viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
           <path className="arch-fill" d="M4 260V112C4 58 52 26 100 4c48 22 96 54 96 108v148Z" />
@@ -108,6 +109,7 @@ function Home() {
           )
         })}
       </ul>
+      </div>
       {status === 'denied' && <p className="meta" role="status">{t(lang, 'locationDenied')} <button className="btn" onClick={retry}>{t(lang, 'retry')}</button></p>}
       {days.official ? <p className="meta center">{t(lang, 'official')}</p>
         : resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
