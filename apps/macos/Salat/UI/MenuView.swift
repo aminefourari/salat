@@ -30,7 +30,8 @@ struct MenuView: View {
                 VStack(spacing: 2) {
                     if let city = engine.loc?.city { Text("\(flag(city.cc)) \(city.name)") }
                     Text(methodName(engine.method, lang))
-                    if engine.method == .morocco { Text(t(.approximate, lang)).fixedSize(horizontal: false, vertical: true) }
+                    if engine.official { Text(t(.official, lang)) }
+                    else if engine.method == .morocco { Text(t(.approximate, lang)).fixedSize(horizontal: false, vertical: true) }
                 }
                 .font(Theme.plex(11)).foregroundStyle(Theme.soft).multilineTextAlignment(.center)
             } else {

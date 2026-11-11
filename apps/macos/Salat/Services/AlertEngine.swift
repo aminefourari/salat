@@ -16,6 +16,8 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private(set) var method: MethodId = .mwl
     private(set) var today: DayTimes?
     private(set) var tomorrow: DayTimes?
+    /// Today's times come from the official Habous timetable (Morocco), not the calculation.
+    private(set) var official = false
 
     var sky: Sky { today.map { skyAt($0, now) } ?? .night }
 
@@ -29,6 +31,8 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
     private var country: String?
     private var timer: Timer?
     private var clock: AlertClock
+    /// Last Habous request: its place+date, when, and whether to stop asking for it (no city near).
+    private var habousAsked: (key: String, at: Date, final: Bool)?
 
     init(settings: AppSettings, location: LocationService) {
         self.settings = settings
@@ -65,15 +69,40 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         }
         method = s.method ?? methodForCountry(country)
         let cal = Calendar.autoupdatingCurrent
-        let days = (-1...1).map { off in
-            computeDay(lat: loc.lat, lon: loc.lon, date: dayComponents(cal.date(byAdding: .day, value: off, to: now)!),
-                       method: method, asr: s.asr)
+        let dates = (-1...1).map { dayComponents(cal.date(byAdding: .day, value: $0, to: now)!) }
+        let habous = usesHabous(method: method, asr: s.asr)
+        let place = habousPlace(lat: loc.lat, lon: loc.lon)
+        if habous { refreshHabous(place: place, dates: dates) }
+        let days = dates.map { date in
+            (habous ? habousDay(s.habous, place: place, date: date) : nil)
+                ?? computeDay(lat: loc.lat, lon: loc.lon, date: date, method: method, asr: s.asr)
         }
         today = days[1]; tomorrow = days[2]
+        official = habous && habousDay(s.habous, place: place, date: dates[1]) != nil
         let due = clock.step(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder, now: now)
         guard !due.isEmpty else { return }
         settings.d.lastAlertHandled = now // persisted so a relaunch doesn't replay these
         for (e, late) in due { fire(e, late: late) }
+    }
+
+    /// Asks the Worker for today's and tomorrow's official times when the cache lacks today.
+    /// Retries every 10 min on failure; a 404 (no Habous city within 25 km) stops it until the place or day changes.
+    private func refreshHabous(place: String, dates: [DateComponents]) {
+        let today = isoDate(dates[1]), key = "\(place) \(today)"
+        if habousDay(settings.d.habous, place: place, date: dates[1]) != nil { return }
+        if let a = habousAsked, a.key == key, a.final || now.timeIntervalSince(a.at) < 600 { return }
+        habousAsked = (key, now, false)
+        let yesterday = isoDate(dates[0])
+        Task { [weak self] in
+            guard let (data, res) = try? await URLSession.shared.data(from: habousURL(place: place, date: today)),
+                  let status = (res as? HTTPURLResponse)?.statusCode else { return }
+            guard let self else { return }
+            if status == 404 { habousAsked = (key, habousAsked?.at ?? now, true); return }
+            guard status == 200, let body = try? JSONDecoder().decode([String: [String: [Double]]].self, from: data),
+                  let days = body["days"] else { return }
+            settings.d.habous = mergeHabous(settings.d.habous, place: place, fetched: days, keepFrom: yesterday)
+            tick()
+        }
     }
 
     private func fire(_ e: AlertEvent, late: Bool) {

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { detectLang } from './i18n'
 import { countryAt } from './methods'
-import { computeDay, dateIn, nextDate, type DayTimes, type Settings } from './prayer'
+import { computeDay, dateIn, nextDate, usesHabous, type DayTimes, type Settings } from './prayer'
 
 export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null }
 export type Notify = { start: boolean; reminder: boolean }
@@ -156,14 +156,41 @@ export function setNotify(n: Notify) { write(KEYS.notify, n); syncPush().catch((
 // ---- day times ----
 
 
-/** Today's and tomorrow's times for the saved location, in this device's time zone. */
-export function useDays(loc: Loc | null, s: Settings, now: Date): { today: DayTimes; tomorrow: DayTimes; date: string } | null {
+type Habous = { key: string; days: Record<string, number[]> }
+const HABOUS_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
+const toDay = (ms: number[]) => Object.fromEntries(HABOUS_KEYS.map((k, i) => [k, new Date(ms[i])])) as DayTimes
+
+/** Official Habous times for Morocco from our Worker; the last answer is kept for offline use. */
+function useHabous(loc: Loc | null, s: Settings, date: string): Habous['days'] | null {
+  const on = !!loc && usesHabous(loc.lat, loc.lon, s)
+  const key = on ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)},${date}` : ''
+  const saved = useStored<Habous>('salat.habous', { key: '', days: {} }, { key: '', days: {} })[0]
+  useEffect(() => {
+    if (!key || saved.key === key) return
+    const [lat, lon] = key.split(',')
+    fetch(`/api/habous?lat=${lat}&lon=${lon}&date=${date}`)
+      .then((r): Promise<Pick<Habous, 'days'>> => (r.ok ? r.json() : r.status === 404 ? Promise.resolve({ days: {} }) : Promise.reject()))
+      .then(({ days }) => write<Habous>('salat.habous', { key, days }))
+      .catch(() => {})
+  }, [key, saved.key, date])
+  return on ? saved.days : null
+}
+
+/** Today's and tomorrow's times for the saved location, in this device's time zone; `official` when from Habous. */
+export function useDays(loc: Loc | null, s: Settings, now: Date): { today: DayTimes; tomorrow: DayTimes; date: string; official: boolean } | null {
   const zone = tz()
   const date = dateIn(now, zone)
+  const habous = useHabous(loc, s, date)
   return useMemo(() => {
     if (!loc) return null
-    return { today: computeDay(loc.lat, loc.lon, date, zone, s), tomorrow: computeDay(loc.lat, loc.lon, nextDate(date), zone, s), date }
-  }, [loc, s, date, zone])
+    const tomorrowDate = nextDate(date)
+    const official = !!habous?.[date]
+    return {
+      today: official ? toDay(habous![date]) : computeDay(loc.lat, loc.lon, date, zone, s),
+      tomorrow: habous?.[tomorrowDate] ? toDay(habous[tomorrowDate]) : computeDay(loc.lat, loc.lon, tomorrowDate, zone, s),
+      date, official,
+    }
+  }, [loc, s, date, zone, habous])
 }
 
 export async function testPush() {

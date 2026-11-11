@@ -14,6 +14,7 @@ import { Route as AdhkarRouteImport } from './routes/adhkar'
 import { Route as QiblaRouteImport } from './routes/qibla'
 import { Route as QuranRouteImport } from './routes/quran'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiHabousRouteImport } from './routes/api/habous'
 import { Route as ApiPlaceRouteImport } from './routes/api/place'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiTestPushRouteImport } from './routes/api/test-push'
@@ -43,6 +44,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHabousRoute = ApiHabousRouteImport.update({
+  id: '/api/habous',
+  path: '/api/habous',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlaceRoute = ApiPlaceRouteImport.update({
   id: '/api/place',
   path: '/api/place',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
+  '/api/habous': typeof ApiHabousRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
+  '/api/habous': typeof ApiHabousRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
+  '/api/habous': typeof ApiHabousRoute
   '/api/place': typeof ApiPlaceRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/qibla'
     | '/quran'
     | '/settings'
+    | '/api/habous'
     | '/api/place'
     | '/api/subscribe'
     | '/api/test-push'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/qibla'
     | '/quran'
     | '/settings'
+    | '/api/habous'
     | '/api/place'
     | '/api/subscribe'
     | '/api/test-push'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/qibla'
     | '/quran'
     | '/settings'
+    | '/api/habous'
     | '/api/place'
     | '/api/subscribe'
     | '/api/test-push'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   QiblaRoute: typeof QiblaRoute
   QuranRoute: typeof QuranRoute
   SettingsRoute: typeof SettingsRoute
+  ApiHabousRoute: typeof ApiHabousRoute
   ApiPlaceRoute: typeof ApiPlaceRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   ApiTestPushRoute: typeof ApiTestPushRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/habous': {
+      id: '/api/habous'
+      path: '/api/habous'
+      fullPath: '/api/habous'
+      preLoaderRoute: typeof ApiHabousRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/place': {
       id: '/api/place'
       path: '/api/place'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   QiblaRoute: QiblaRoute,
   QuranRoute: QuranRoute,
   SettingsRoute: SettingsRoute,
+  ApiHabousRoute: ApiHabousRoute,
   ApiPlaceRoute: ApiPlaceRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   ApiTestPushRoute: ApiTestPushRoute,

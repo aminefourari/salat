@@ -1,7 +1,8 @@
 import { t } from '../lib/i18n'
 import type { MethodId } from '../lib/methods'
-import { formatHM, type DayTimes, type Lang, type Settings } from '../lib/prayer'
+import { dateIn, formatHM, nextDate, usesHabous, type DayTimes, type Lang, type Settings } from '../lib/prayer'
 import { dueEvents, type Sub } from '../lib/schedule'
+import { habousDays } from './habous'
 
 export type Row = {
   endpoint: string; p256dh: string; auth: string; lat: number; lon: number; tz: string
@@ -16,7 +17,17 @@ export type Store = {
   remove(endpoint: string): Promise<void>
 }
 /** Optional per-row override of day times (Morocco: official Habous timetable). */
-export type DayTimesFor = (row: Row) => Promise<((date: string) => DayTimes | null) | undefined>
+export type DayTimesFor = (row: Row, now: Date) => Promise<((date: string) => DayTimes | null) | undefined>
+
+/** Morocco rows use the official timetable for yesterday..tomorrow (dueEvents' window); calculated otherwise. */
+export const habousDayTimes: DayTimesFor = async (row, now) => {
+  const sub = toSub(row)
+  if (!usesHabous(sub.lat, sub.lon, sub.settings)) return undefined
+  const today = dateIn(now, sub.tz)
+  const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+  const days = await habousDays(sub.lat, sub.lon, [yesterday, today, nextDate(today)])
+  return days ? date => days.get(date) ?? null : undefined
+}
 
 export const toSub = (r: Row): Sub => ({
   lat: r.lat, lon: r.lon, tz: r.tz,
@@ -29,7 +40,7 @@ export async function runCron(store: Store, now: Date, send: (r: Row, p: Payload
   for (const row of await store.all()) {
     try {
       const sub = toSub(row)
-      const events = dueEvents(sub, now, await dayTimesFor?.(row))
+      const events = dueEvents(sub, now, await dayTimesFor?.(row, now))
       if (!events.length) continue
       let ok = true
       for (const e of events) {

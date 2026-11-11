@@ -39,6 +39,9 @@ export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true }
 export const resolveMethod = (lat: number, lon: number, s: Settings): MethodId =>
   s.method === 'auto' ? methodForCountry(countryAt(lat, lon)) : s.method
 
+/** Morocco with the standard Asr: the official Habous timetable applies (when a listed city is near). */
+export const usesHabous = (lat: number, lon: number, s: Settings) => resolveMethod(lat, lon, s) === 'morocco' && s.asr === 'standard'
+
 /** Prayer times for calendar day `date` (YYYY-MM-DD, as seen in `tz`). */
 export function computeDay(lat: number, lon: number, date: string, _tz: string, s: Settings, params?: CalculationParameters): DayTimes {
   const [y, m, d] = date.split('-').map(Number)

@@ -25,6 +25,7 @@ final class AppSettings {
         var loginItemPath: String? = nil
         var lastAdhkarChapter: Int? = nil
         var adhanDefaultsV2: Bool? = nil
+        var habous: HabousDays? = nil // last official Moroccan times from the Worker, for offline use
     }
 
     private static let key = "settings.v1"

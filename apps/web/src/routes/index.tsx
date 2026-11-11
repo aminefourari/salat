@@ -95,7 +95,8 @@ function Home() {
         })}
       </ul>
       {status === 'denied' && <p className="meta" role="status">{t(lang, 'locationDenied')} <button className="btn" onClick={retry}>{t(lang, 'retry')}</button></p>}
-      {resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
+      {days.official ? <p className="meta center">{t(lang, 'official')}</p>
+        : resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
       <p className="meta center">{placeLabel(loc, lang)}</p>
     </>
   )

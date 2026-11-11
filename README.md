@@ -69,6 +69,10 @@ Release with `Salat-v1.0.0.zip`.
 
 - **City names:** [GeoNames](https://www.geonames.org) `cities5000` (CC BY 4.0). The Worker and the Mac app both
   bundle them, so location lookups never leave our own infrastructure.
+- **Morocco:** the official timetable of the Ministry of Habous (`habous.gov.ma/data/horaires-YYYY-MM.js`), fetched
+  and cached by the Worker for the nearest listed city within 25 km, else calculated (Fajr 19°, Isha 17°). Loader and
+  city coordinates (`apps/web/src/server/habous-cities.json`, from GeoNames, CC BY 4.0) come from
+  [fr255-watchface](https://github.com/iliassjabali/fr255-watchface).
 - **Country borders:** [country-coder](https://github.com/rapideditor/country-coder).
 - **Quran text and recitations:** [quran.com](https://quran.com). The Mac app downloads recitations for offline use;
   the website streams them.
