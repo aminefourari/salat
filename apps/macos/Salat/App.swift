@@ -43,7 +43,7 @@ struct SalatApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra { MenuView(engine: engine, updater: updater) } label: { MenuLabel(engine: engine) }
+        MenuBarExtra { MenuView(engine: engine, updater: updater, inMenuBar: true) } label: { MenuLabel(engine: engine) }
             .menuBarExtraStyle(.window)
         Window("Salat", id: "main") { MainView(engine: engine, quran: quran, adhkar: adhkar, updater: updater) }
             .defaultSize(width: 900, height: 700)

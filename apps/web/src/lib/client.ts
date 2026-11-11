@@ -1,6 +1,7 @@
 // Browser-only helpers and hooks: persisted settings, location, push subscription.
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { detectLang } from './i18n'
+import { fetchJson } from './load'
 import { countryAt } from './methods'
 import { adjustDay, computeDay, dateIn, nextDate, usesHabous, type DayTimes, type Settings } from './prayer'
 
@@ -241,4 +242,24 @@ export function useLazy<T>(load: () => Promise<T>): { data: T | null; failed: bo
   const run = useCallback(() => { setFailed(false); load().then(setData, () => setFailed(true)) }, [load])
   useEffect(run, [run])
   return { data, failed, retry: run }
+}
+
+/** True once the server runs a newer build than this page: checked when the page comes back into view and
+ *  every 30 min (an installed iPhone app can stay open for days). Offline checks just fail quietly. */
+export function useNewVersion() {
+  const [stale, setStale] = useState(false)
+  useEffect(() => {
+    if (import.meta.env.DEV) return
+    const check = () => {
+      if (document.visibilityState !== 'visible') return
+      fetchJson<{ build: string }>('/api/version')
+        .then(({ build }) => { if (build && build !== import.meta.env.VITE_BUILD_ID) setStale(true) })
+        .catch(() => {})
+    }
+    check()
+    const id = setInterval(check, 30 * 60_000)
+    document.addEventListener('visibilitychange', check)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', check) }
+  }, [])
+  return stale
 }

@@ -20,6 +20,7 @@ import { Route as ApiPlaceRouteImport } from './routes/api/place'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiTestPushRouteImport } from './routes/api/test-push'
 import { Route as ApiUpdateRouteImport } from './routes/api/update'
+import { Route as ApiVersionRouteImport } from './routes/api/version'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ApiUpdateRoute = ApiUpdateRouteImport.update({
   path: '/api/update',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVersionRoute = ApiVersionRouteImport.update({
+  id: '/api/version',
+  path: '/api/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
   '/api/update': typeof ApiUpdateRoute
+  '/api/version': typeof ApiVersionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
   '/api/update': typeof ApiUpdateRoute
+  '/api/version': typeof ApiVersionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/test-push': typeof ApiTestPushRoute
   '/api/update': typeof ApiUpdateRoute
+  '/api/version': typeof ApiVersionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/api/subscribe'
     | '/api/test-push'
     | '/api/update'
+    | '/api/version'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/api/subscribe'
     | '/api/test-push'
     | '/api/update'
+    | '/api/version'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/api/subscribe'
     | '/api/test-push'
     | '/api/update'
+    | '/api/version'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   ApiTestPushRoute: typeof ApiTestPushRoute
   ApiUpdateRoute: typeof ApiUpdateRoute
+  ApiVersionRoute: typeof ApiVersionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUpdateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/version': {
+      id: '/api/version'
+      path: '/api/version'
+      fullPath: '/api/version'
+      preLoaderRoute: typeof ApiVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSubscribeRoute: ApiSubscribeRoute,
   ApiTestPushRoute: ApiTestPushRoute,
   ApiUpdateRoute: ApiUpdateRoute,
+  ApiVersionRoute: ApiVersionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

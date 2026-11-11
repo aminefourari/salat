@@ -22,8 +22,11 @@ struct MenuLabel: View {
 struct MenuView: View {
     let engine: AlertEngine
     var updater: Updater? = nil
+    /// Shown as the menu-bar panel (not inside the main window): opening a window closes the panel.
+    var inMenuBar = false
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("section") private var section = AppSection.prayer
 
     var lang: Lang { engine.settings.d.lang }
@@ -157,8 +160,14 @@ struct MenuView: View {
         return String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
     }
 
-    /// A menu-bar-only app must activate itself, or the opened window stays behind others.
+    /// Closes the menu-bar panel (it would stay on top of what it opened), then activates the app, since a
+    /// menu-bar-only app's windows otherwise open behind others. The panel is the key window while it's clicked.
     private func show(_ open: () -> Void) {
+        if inMenuBar {
+            let panel = NSApp.keyWindow
+            dismiss() // closes the MenuBarExtra panel and keeps its status item in sync
+            panel?.orderOut(nil) // in case dismiss doesn't reach the panel
+        }
         NSApp.activate()
         open()
     }
