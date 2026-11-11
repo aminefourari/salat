@@ -252,7 +252,7 @@ select {
 .ramadan { color: var(--gold); font-size: .82rem; font-variant-numeric: tabular-nums; }
 .adjust { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
 .adjust .field { padding: 0; border: 0; font-size: .8rem; color: var(--soft); text-align: center; }
-.adjust input, .month-nav select {
+.adjust select {
   width: 100%; padding: .45rem .3rem; border-radius: .7rem; border: 1px solid var(--line); text-align: center;
   background: color-mix(in srgb, var(--royal-deep) 80%, transparent); color: var(--ink); font: inherit;
 }

@@ -13,6 +13,8 @@ import { hijriOffset, MAX_ADJUST, PRAYERS, resolveMethod, type Lang, type Settin
 export const Route = createFileRoute('/settings')({ component: SettingsPage })
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n))
+// A select, not a number input: the iPhone's numeric keypad has no minus key.
+const OFFSETS = Array.from({ length: 2 * MAX_ADJUST + 1 }, (_, i) => i - MAX_ADJUST)
 
 type PushState = 'loading' | 'on' | 'off' | 'denied' | 'unsupported' | 'install'
 
@@ -82,11 +84,9 @@ function SettingsPage() {
           {PRAYERS.map(p => (
             <label key={p} className="field">
               {t(lang, p)}
-              <input type="number" inputMode="numeric" min={-MAX_ADJUST} max={MAX_ADJUST} step={1} value={s.adjust?.[p] ?? 0}
-                onChange={e => {
-                  const v = Math.max(-MAX_ADJUST, Math.min(MAX_ADJUST, Math.trunc(Number(e.target.value) || 0)))
-                  update({ adjust: { ...s.adjust, [p]: v } })
-                }} />
+              <select value={s.adjust?.[p] ?? 0} onChange={e => update({ adjust: { ...s.adjust, [p]: Number(e.target.value) } })}>
+                {OFFSETS.map(n => <option key={n} value={n}>{signed(n)}</option>)}
+              </select>
             </label>
           ))}
         </div>
