@@ -1,7 +1,7 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import appCss from '../styles.css?url'
-import { syncPush, useLoc, useSettings } from '../lib/client'
+import { syncPush, useLoc, useNewVersion, useSettings } from '../lib/client'
 import { Mark, NavAdhkar, NavQibla, NavQuran, NavSettings, NavTimes } from '../components/icons'
 import { t } from '../lib/i18n'
 
@@ -54,6 +54,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     syncPush().catch(() => {})
   }, [])
   const loc = useLoc()
+  const stale = useNewVersion()
   let place = loc?.city ?? ''
   try { if (!place && loc?.country) place = new Intl.DisplayNames([lang], { type: 'region' }).of(loc.country) ?? '' } catch {}
   const flag = loc?.country ? String.fromCodePoint(...[...loc.country].map(c => 0x1f1a5 + c.charCodeAt(0))) : ''
@@ -64,6 +65,12 @@ function Shell({ children }: { children: React.ReactNode }) {
         {place && <span className="chip"><span aria-hidden="true">{flag}</span>{place}</span>}
       </header>
       <main className="app">{children}</main>
+      {stale && (
+        <div className="update-banner" role="status">
+          <span>{t(lang, 'newVersion')}</span>
+          <button className="btn btn-solid" onClick={() => location.reload()}>{t(lang, 'reload')}</button>
+        </div>
+      )}
       <nav className="tabs" aria-label="Salat">
         <Link to="/"><NavTimes className="tab-icon" /><span>{t(lang, 'times')}</span></Link>
         <Link to="/quran"><NavQuran className="tab-icon" /><span>{t(lang, 'quran')}</span></Link>
