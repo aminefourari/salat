@@ -16,7 +16,7 @@ enum Lang: String, CaseIterable, Codable, Sendable {
 enum L10nKey: String, CaseIterable, Sendable {
     case fajr, sunrise, dhuhr, asr, maghrib, isha
     case notifStart, notifReminder, next, inTime, today, qibla, settings, locating
-    case language, method, auto, asrMethod, standard, hanafi, notifyReminder, approximate
+    case language, method, auto, asrMethod, standard, hanafi, notifyReminder, approximate, official
     case qiblaBearing, distance, dirs, dirWords, noCompass
     case quran, quit, stop, openAtLogin, menuBarIconOnly, general, prayerTimes, alerts
     case adhanVoice, fajrVoice, alertAdhan, alertNotification, alertOff, playTest, startedAt
@@ -34,6 +34,7 @@ private let en: [L10nKey: String] = [
     .asrMethod: "Asr", .standard: "Standard (Shafiʿi, Maliki, Hanbali)", .hanafi: "Hanafi",
     .notifyReminder: "Remind me 10 minutes before",
     .approximate: "Calculated with the Habous method (Fajr 19°, Isha 17°). May differ from the official timetable by a few minutes.",
+    .official: "Official Habous timetable",
     .qiblaBearing: "{deg}° from north", .distance: "{km} km to Makkah",
     .dirs: "N,NE,E,SE,S,SW,W,NW", .dirWords: "north,north-east,east,south-east,south,south-west,west,north-west",
     .noCompass: "Face {deg}° from north ({dir}).",
@@ -60,6 +61,7 @@ private let fr: [L10nKey: String] = [
     .asrMethod: "Asr", .standard: "Standard (chaféite, malikite, hanbalite)", .hanafi: "Hanafite",
     .notifyReminder: "Me rappeler 10 minutes avant",
     .approximate: "Calculé selon la méthode des Habous (Fajr 19°, Isha 17°). Peut différer de quelques minutes de l’horaire officiel.",
+    .official: "Horaire officiel des Habous",
     .qiblaBearing: "{deg}° depuis le nord", .distance: "{km} km jusqu’à La Mecque",
     .dirs: "N,NE,E,SE,S,SO,O,NO", .dirWords: "nord,nord-est,est,sud-est,sud,sud-ouest,ouest,nord-ouest",
     .noCompass: "Orientez-vous à {deg}° depuis le nord ({dir}).",
@@ -86,6 +88,7 @@ private let ar: [L10nKey: String] = [
     .asrMethod: "العصر", .standard: "الجمهور (الشافعي، المالكي، الحنبلي)", .hanafi: "الحنفي",
     .notifyReminder: "ذكّرني قبل 10 دقائق",
     .approximate: "محسوبة وفق طريقة وزارة الأوقاف (الفجر \u{2066}19°\u{2069}، العشاء \u{2066}17°\u{2069}). قد تختلف ببضع دقائق عن الجدول الرسمي.",
+    .official: "الجدول الرسمي لوزارة الأوقاف",
     .qiblaBearing: "\u{2066}{deg}°\u{2069} من الشمال", .distance: "\u{2066}{km}\u{2069} كم إلى مكة",
     .dirs: "ش,ش ق,ق,ج ق,ج,ج غ,غ,ش غ", .dirWords: "الشمال,الشمال الشرقي,الشرق,الجنوب الشرقي,الجنوب,الجنوب الغربي,الغرب,الشمال الغربي",
     .noCompass: "اتجه \u{2066}{deg}°\u{2069} من الشمال ({dir}).",
