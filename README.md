@@ -41,6 +41,9 @@ test fixture keeps the two in sync.
 
 It requires macOS 15 or later. Salat starts at login by default; you can change this in Settings → General.
 
+Salat checks for new versions once a day and offers to install them (Settings → General → Updates). Versions before
+1.1.0 don't have this yet, so update those once by hand.
+
 ## Development
 
 ```sh

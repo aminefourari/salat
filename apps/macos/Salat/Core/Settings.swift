@@ -30,6 +30,7 @@ final class AppSettings {
         var hijriOffset: Int? = nil // days added to the Hijri date; nil = automatic
         var adhkarReminder: Bool? = nil
         var fridayReminder: Bool? = nil
+        var autoUpdateCheck: Bool? = nil // nil = on
     }
 
     private static let key = "settings.v1"
