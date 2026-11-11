@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import quran from '../../../data/quran.json'
 import adhkar from '../../../data/adhkar.json'
-import { ayahIndex, parseRecitation, RECITERS, recitationApi } from '../src/lib/quran'
+import { ayahIndex, hizbStarts, parseRecitation, RECITERS, recitationApi, rubInfo, tafsirText, type Surah } from '../src/lib/quran'
 import { badge, chapterTitle, translation, type Chapter } from '../src/lib/adhkar'
 import { memoLoad } from '../src/lib/load'
 
@@ -9,6 +9,20 @@ describe('quran', () => {
   it('bundled text is complete', () => {
     expect(quran.length).toBe(114)
     expect(quran.reduce((n, s) => n + s.ayahs.length, 0)).toBe(6236)
+  })
+
+  it('hizb and juz boundaries', () => {
+    expect(rubInfo(1)).toEqual({ juz: 1, hizb: 1, quarter: 0 })
+    expect(rubInfo(240)).toEqual({ juz: 30, hizb: 60, quarter: 3 })
+    const h = hizbStarts(quran as Surah[])
+    expect(h.length).toBe(60)
+    expect(h[2]).toEqual({ juz: 2, hizb: 3, quarter: 0, surah: 2, ayah: 142 })
+    expect(h[59]).toEqual({ juz: 30, hizb: 60, quarter: 0, surah: 87, ayah: 1 })
+  })
+
+  it('tafsir HTML becomes plain paragraphs', () => {
+    expect(tafsirText('<h2>Title</h2><p>A &amp; B<br>C &#1575;</p><p><span class="x">D</span> <script>x</script></p>'))
+      .toEqual(['Title', 'A & B', 'C ا', 'D x'])
   })
 
   it('ayahIndex picks the ayah playing at a time, clamped', () => {

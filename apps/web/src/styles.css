@@ -260,6 +260,19 @@ select {
   border-color: color-mix(in srgb, var(--gold) 70%, transparent);
 }
 .ayah-no { color: var(--gold); }
+.rub-mark {
+  display: flex; align-items: center; gap: .6rem; margin: .6rem 0 .2rem; color: var(--gold); font-size: .8rem; font-weight: 600;
+}
+.rub-mark::before, .rub-mark::after { content: ''; flex: 1; border-top: 1px solid color-mix(in srgb, var(--gold) 35%, transparent); }
+.tafsir { margin: 0 .8rem .4rem; font-size: .95rem; }
+.tafsir summary { cursor: pointer; color: var(--soft); font-size: .78rem; width: max-content; }
+.tafsir[open] { padding: .6rem .9rem; border-radius: 1rem; background: var(--panel); border: 1px solid var(--line); }
+.tafsir section[lang='ar'] { font: 400 1.1rem/1.9 'Amiri', serif; }
+.tafsir h3 { color: var(--gold); font-size: .85rem; margin: .4rem 0; }
+.tafsir p { margin: 0 0 .5rem; }
+.seg { display: flex; gap: .25rem; padding: .25rem; margin: 0 0 .75rem; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.seg button { flex: 1; padding: .45rem; border: 0; border-radius: 999px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.seg button[aria-pressed='true'] { background: linear-gradient(180deg, #f1da8e, var(--gold)); color: var(--royal-deep); font-weight: 600; }
 .chapter-ar { font: 400 1.3rem/1.5 'Amiri', serif; color: var(--gold); margin: -.75rem 0 1rem; }
 .dhikr.is-playing { border-color: color-mix(in srgb, var(--gold) 70%, transparent); }
 .dhikr-ar { font: 400 1.45rem/2.1 'Amiri', serif; margin: 0 0 .6rem !important; }

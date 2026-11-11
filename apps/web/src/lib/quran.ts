@@ -1,6 +1,7 @@
 // Quran reader logic shared by the /quran route (pure; mirrors apps/macos/Salat/Quran/Recitations.swift).
 
-export type Surah = { n: number; ar: string; en: string; ayahs: string[] }
+/** `rub`: [ayah, rubʿ number] where one of the 240 quarters (rubʿ al-hizb) starts in this surah. */
+export type Surah = { n: number; ar: string; en: string; ayahs: string[]; rub: [number, number][] }
 export type AyahTiming = { ayah: number; from: number; to: number } // ms
 export type Recitation = { audioUrl: string; timings: AyahTiming[] }
 
@@ -43,3 +44,29 @@ export function ayahIndex(ms: number, timings: AyahTiming[]): number {
 
 /** Arabic-Indic digits for ayah markers. */
 export const arabicDigits = (n: number) => String(n).replace(/\d/g, d => String.fromCharCode(0x0660 + Number(d)))
+
+/** Rubʿ (1…240) → its juz (1…30), hizb (1…60) and quarter within the hizb (0 = the hizb starts here). */
+export const rubInfo = (rub: number) => ({ juz: Math.ceil(rub / 8), hizb: Math.ceil(rub / 4), quarter: (rub - 1) % 4 })
+
+/** Where each of the 60 hizbs starts. */
+export const hizbStarts = (surahs: Surah[]) =>
+  surahs.flatMap(s => s.rub.filter(([, r]) => r % 4 === 1).map(([ayah, r]) => ({ ...rubInfo(r), surah: s.n, ayah })))
+
+/** quran.com tafsirs by UI language: Tafsir al-Muyassar (16), plus Ibn Kathir abridged (169) in English. */
+export const TAFSIRS: Record<'ar' | 'en' | 'fr', { id: number; name: string }[]> = {
+  ar: [{ id: 16, name: 'التفسير الميسر' }],
+  fr: [{ id: 16, name: 'التفسير الميسر' }],
+  en: [{ id: 169, name: 'Ibn Kathir (abridged)' }, { id: 16, name: 'التفسير الميسر' }],
+}
+export const tafsirApi = (id: number, surah: number, ayah: number) =>
+  `https://api.quran.com/api/v4/tafsirs/${id}/by_ayah/${surah}:${ayah}`
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
+/** quran.com tafsir HTML → plain paragraphs, so no third-party markup reaches the page. */
+export function tafsirText(html: string): string[] {
+  return html
+    .replace(/<br\s*\/?>|<\/(p|h\d|div|li)>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#\d+|[a-z]+);/gi, (m, e: string) => (e[0] === '#' ? String.fromCodePoint(Number(e.slice(1))) : ENTITIES[e.toLowerCase()] ?? m))
+    .split('\n').map(x => x.trim()).filter(Boolean)
+}

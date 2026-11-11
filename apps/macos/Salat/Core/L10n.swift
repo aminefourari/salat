@@ -23,6 +23,7 @@ enum L10nKey: String, CaseIterable, Sendable {
     case reciter, defaultReciter, download, downloadAll, delete, needsInternet, downloading, notDownloaded, retry
     case location, automatic, manualCity, searchCity, locationDenied, noLocation
     case play, pause, previous, nextAyah, chooseSurah, cancel, ayahCount
+    case surahs, hizbs, juzN, hizbN, rub1, rub2, rub3, tafsir, loadFailed
     case adhkar, adhkarAudio, searchCategory, chooseCategory, stopAudio, addAdhan
     case notifAdhkarMorning, notifAdhkarEvening, notifKahf, notifJumuah, notifyAdhkar, notifyFriday
     case adjustments, adjustHint, hijriOffset, hijriAuto, days, ramadan, imsak, iftar
@@ -54,6 +55,8 @@ private let en: [L10nKey: String] = [
     .noLocation: "Choose a city in Settings to see prayer times.",
     .play: "Play", .pause: "Pause", .previous: "Previous ayah", .nextAyah: "Next ayah", .chooseSurah: "Choose a surah",
     .cancel: "Cancel", .ayahCount: "{n} ayahs",
+    .surahs: "Surahs", .hizbs: "Hizbs", .juzN: "Juz {n}", .hizbN: "Hizb {n}", .rub1: "¼ Hizb {n}", .rub2: "½ Hizb {n}", .rub3: "¾ Hizb {n}",
+    .tafsir: "Tafsir", .loadFailed: "Couldn't load. Check your connection.",
     .adhkar: "Adhkar", .adhkarAudio: "Adhkar audio", .searchCategory: "Search", .chooseCategory: "Choose a category", .stopAudio: "Stop", .addAdhan: "Add your own…",
     .notifAdhkarMorning: "Morning adhkar — click to read them", .notifAdhkarEvening: "Evening adhkar — click to read them",
     .notifKahf: "It's Friday: read Surat al-Kahf — click to open it", .notifJumuah: "Jumuʿah today — Dhuhr at {time}",
@@ -92,6 +95,8 @@ private let fr: [L10nKey: String] = [
     .noLocation: "Choisissez une ville dans les réglages pour voir les horaires.",
     .play: "Lecture", .pause: "Pause", .previous: "Verset précédent", .nextAyah: "Verset suivant", .chooseSurah: "Choisissez une sourate",
     .cancel: "Annuler", .ayahCount: "{n} versets",
+    .surahs: "Sourates", .hizbs: "Hizbs", .juzN: "Juz {n}", .hizbN: "Hizb {n}", .rub1: "¼ du hizb {n}", .rub2: "½ du hizb {n}", .rub3: "¾ du hizb {n}",
+    .tafsir: "Tafsir", .loadFailed: "Chargement impossible. Vérifiez votre connexion.",
     .adhkar: "Adhkar", .adhkarAudio: "Audio des adhkar", .searchCategory: "Rechercher", .chooseCategory: "Choisissez une catégorie", .stopAudio: "Arrêter", .addAdhan: "Ajouter le vôtre…",
     .notifAdhkarMorning: "Adhkar du matin — cliquez pour les lire", .notifAdhkarEvening: "Adhkar du soir — cliquez pour les lire",
     .notifKahf: "C'est vendredi : lisez la sourate al-Kahf — cliquez pour l'ouvrir", .notifJumuah: "Joumouʿa aujourd'hui — Dhuhr à {time}",
@@ -130,6 +135,8 @@ private let ar: [L10nKey: String] = [
     .noLocation: "اختر مدينة من الإعدادات لعرض المواقيت.",
     .play: "تشغيل", .pause: "إيقاف مؤقت", .previous: "الآية السابقة", .nextAyah: "الآية التالية", .chooseSurah: "اختر سورة",
     .cancel: "إلغاء", .ayahCount: "{n} آية",
+    .surahs: "السور", .hizbs: "الأحزاب", .juzN: "الجزء {n}", .hizbN: "الحزب {n}", .rub1: "ربع الحزب {n}", .rub2: "نصف الحزب {n}", .rub3: "ثلاثة أرباع الحزب {n}",
+    .tafsir: "التفسير", .loadFailed: "تعذّر التحميل. تحقق من اتصالك.",
     .adhkar: "الأذكار", .adhkarAudio: "صوتيات الأذكار", .searchCategory: "بحث", .chooseCategory: "اختر بابًا", .stopAudio: "إيقاف", .addAdhan: "إضافة أذان خاص…",
     .notifAdhkarMorning: "أذكار الصباح — انقر لقراءتها", .notifAdhkarEvening: "أذكار المساء — انقر لقراءتها",
     .notifKahf: "اليوم الجمعة: اقرأ سورة الكهف — انقر لفتحها", .notifJumuah: "صلاة الجمعة اليوم — الظهر الساعة {time}",

@@ -39,6 +39,7 @@ const en = {
   ramadan: 'Ramadan', imsak: 'Imsak', iftar: 'Iftar',
   monthly: 'Monthly timetable', print: 'Print', prevMonth: 'Previous month', nextMonth: 'Next month', date: 'Date',
   continueReading: 'Continue: {surah}, ayah {ayah}',
+  surahs: 'Surahs', hizbs: 'Hizbs', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ Hizb {n}', 'rub.2': '½ Hizb {n}', 'rub.3': '¾ Hizb {n}', tafsir: 'Tafsir',
 }
 type Key = keyof typeof en
 
@@ -80,6 +81,7 @@ const fr: Record<Key, string> = {
   ramadan: 'Ramadan', imsak: 'Imsak', iftar: 'Iftar',
   monthly: 'Horaires du mois', print: 'Imprimer', prevMonth: 'Mois précédent', nextMonth: 'Mois suivant', date: 'Date',
   continueReading: 'Reprendre : {surah}, verset {ayah}',
+  surahs: 'Sourates', hizbs: 'Hizbs', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ du hizb {n}', 'rub.2': '½ du hizb {n}', 'rub.3': '¾ du hizb {n}', tafsir: 'Tafsir',
 }
 
 const ar: Record<Key, string> = {
@@ -120,6 +122,7 @@ const ar: Record<Key, string> = {
   ramadan: 'رمضان', imsak: 'الإمساك', iftar: 'الإفطار',
   monthly: 'مواقيت الشهر', print: 'طباعة', prevMonth: 'الشهر السابق', nextMonth: 'الشهر التالي', date: 'التاريخ',
   continueReading: 'متابعة: {surah}، الآية {ayah}',
+  surahs: 'السور', hizbs: 'الأحزاب', juzN: 'الجزء {n}', hizbN: 'الحزب {n}', 'rub.1': 'ربع الحزب {n}', 'rub.2': 'نصف الحزب {n}', 'rub.3': 'ثلاثة أرباع الحزب {n}', tafsir: 'التفسير',
 }
 
 const DICT: Record<Lang, Record<Key, string>> = { en, fr, ar }
