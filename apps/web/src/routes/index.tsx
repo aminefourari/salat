@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { Arch } from '../components/Arch'
 import { useEffect } from 'react'
 import { PRAYER_ICONS } from '../components/icons'
 import { tz, useDays, useLocation, useNow, useSettings, type Loc } from '../lib/client'
@@ -76,11 +77,7 @@ function Home() {
 
       <div className="today">
       <section className="hero" aria-live="polite">
-        <svg className="arch" viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">
-          <path className="arch-fill" d="M4 260V112C4 58 52 26 100 4c48 22 96 54 96 108v148Z" />
-          <path className="arch-line" d="M4 260V112C4 58 52 26 100 4c48 22 96 54 96 108v148Z" />
-          <path className="arch-inner" d="M14 260V116C14 68 56 38 100 18c44 20 86 50 86 98v144" />
-        </svg>
+        <Arch />
         <div className="hero-body">
           <p className="hero-label">{t(lang, 'next')}</p>
           <p className="hero-name">{t(lang, next.prayer)}</p>

@@ -83,6 +83,23 @@ button, select { font: inherit; color: inherit; }
 .arch-fill { fill: color-mix(in srgb, var(--royal-deep) 65%, transparent); }
 .arch-line { fill: none; stroke: var(--gold); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
 .arch-inner { fill: none; stroke: var(--gold); stroke-opacity: .35; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.arch-beads { fill: none; stroke: var(--gold); stroke-opacity: .55; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 0 6; vector-effect: non-scaling-stroke; }
+/* The site's star lattice inside the arch, fading out before the text. The arch mask stretches with the box. */
+.arch-lattice {
+  position: absolute; inset: 0; pointer-events: none; opacity: .22;
+  background: var(--pattern) center 6% / 36px 36px;
+  --arch-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20260%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M24%20260V120C24%2077%2061%2050%20100%2032c39%2018%2076%2045%2076%2088v140Z%22/%3E%3C/svg%3E");
+  -webkit-mask: var(--arch-mask) 0 0 / 100% 100% no-repeat, linear-gradient(#000 15%, transparent 55%);
+  -webkit-mask-composite: source-in;
+  mask: var(--arch-mask) 0 0 / 100% 100% no-repeat, linear-gradient(#000 15%, transparent 55%);
+  mask-composite: intersect;
+}
+/* Eight-point star on the apex (outer apex sits at 4/260 of the height). */
+.arch-keystone {
+  position: absolute; left: 50%; top: calc(1.54% - .5rem); width: 1rem; height: 1rem; transform: translateX(-50%);
+  overflow: visible; fill: var(--royal-deep); stroke: var(--gold); stroke-width: 1.4;
+}
+.arch-keystone circle { fill: var(--gold); stroke: none; }
 .hero-body { position: relative; text-align: center; padding: 0 1.5rem 1.1rem; width: 100%; }
 .hero-body p { margin: 0; }
 .hero-label { color: var(--soft); font-size: .9rem; }
@@ -209,11 +226,10 @@ select {
 .back { display: inline-block; margin: .75rem 0 0; color: var(--gold); text-decoration: none; font-size: .9rem; }
 .back::before { content: '‹ '; }
 [dir='rtl'] .back::before { content: '› '; }
-.surah-head { position: relative; max-width: 16rem; aspect-ratio: 200 / 170; margin: .5rem auto 1rem; display: grid; place-items: center; }
-.surah-head .arch { position: absolute; inset: 0; width: 100%; height: 100%; }
-.surah-head-body { position: relative; text-align: center; padding-top: 22%; } /* centered below the arch's curve */
+.surah-head { position: relative; max-width: 16rem; aspect-ratio: 200 / 135; margin: .5rem auto 1rem; display: grid; place-items: center; }
+.surah-head-body { position: relative; text-align: center; padding-top: 14%; } /* centered below the arch's curve */
 .surah-head-body p { margin: 0; }
-.surah-ar { font: 400 2.4rem/1.3 'Amiri Quran', serif; color: var(--gold); padding-bottom: .4em; } /* room only below: Amiri Quran descends far under its baseline */
+.surah-ar { font: 400 2.8rem/1.3 'Amiri Quran', serif; color: var(--gold); padding-bottom: .35em; } /* room only below: Amiri Quran descends far under its baseline */
 .surah-en { font: 700 1.3rem/1.2 'Reem Kufi', sans-serif; }
 .player {
   position: sticky; top: .5rem; z-index: 5; display: flex; gap: .5rem; align-items: center; margin: 0 0 1rem;
