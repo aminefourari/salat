@@ -1,9 +1,15 @@
 name: Release
 
-# Push a tag like v1.2.0 → tests, an unsigned Salat.app build, and a GitHub Release with the zip.
+# A push to main that touches the Mac app (or the data it bundles) releases the next patch version;
+# pushing a tag like v1.2.0 releases that version (for minor/major bumps).
+# Either way: tests, an unsigned Salat.app build, and a GitHub Release with the zip.
 on:
   push:
+    branches: [main]
+    paths: ['apps/macos/**', 'data/**', '.github/workflows/release.yml']
     tags: ['v*']
+
+concurrency: release  # one at a time, so two merges can't pick the same version
 
 permissions:
   contents: write
@@ -21,13 +27,23 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run mac:test
+      - name: Pick version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then TAG="$GITHUB_REF_NAME"
+          else
+            LAST=$(gh release view --json tagName -q .tagName 2>/dev/null || echo v1.0.0)
+            IFS=. read -r MA MI PA <<< "${LAST#v}"
+            TAG="v$MA.$MI.$((PA + 1))"
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
       - name: Build Salat.app
         env:
-          VERSION: ${{ github.ref_name }}
           BUILD_NUMBER: ${{ github.run_number }}
-        run: VERSION="${VERSION#v}" npm run mac:build
+        run: VERSION="${TAG#v}" npm run mac:build
       - name: Zip
-        run: ditto -c -k --keepParent apps/macos/build/Salat.app "Salat-${GITHUB_REF_NAME}.zip"
+        run: ditto -c -k --keepParent apps/macos/build/Salat.app "Salat-${TAG}.zip"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -41,4 +57,5 @@ jobs:
 
           Requires macOS 15 or later. Already installed? Salat offers this update itself (Settings → General → Updates).
           MD
-          gh release create "$GITHUB_REF_NAME" "Salat-${GITHUB_REF_NAME}.zip" --title "Salat $GITHUB_REF_NAME" --notes-file notes.md
+          # On main this also creates the tag (a tag made with GITHUB_TOKEN doesn't re-trigger this workflow).
+          gh release create "$TAG" "Salat-${TAG}.zip" --target "$GITHUB_SHA" --title "Salat $TAG" --notes-file notes.md --generate-notes
