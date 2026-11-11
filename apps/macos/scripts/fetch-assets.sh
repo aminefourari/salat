@@ -10,15 +10,21 @@ mkdir -p "$R/adhans"
 # Quran text (Uthmani) + surah names, from quran.com.
 curl -sf https://api.quran.com/api/v4/chapters -o "$T/chapters.json"
 curl -sf https://api.quran.com/api/v4/quran/verses/uthmani -o "$T/verses.json"
-python3 -I - "$T/chapters.json" "$T/verses.json" "$DATA/quran.json" <<'PY'
+curl -sf https://api.quran.com/api/v4/rub_el_hizbs -o "$T/rubs.json"
+python3 -I - "$T/chapters.json" "$T/verses.json" "$DATA/quran.json" "$T/rubs.json" <<'PY'
 import json, sys
 ch = json.load(open(sys.argv[1]))['chapters']
 vs = json.load(open(sys.argv[2]))['verses']
-out = [{'n': c['id'], 'ar': c['name_arabic'], 'en': c['name_simple'], 'ayahs': []} for c in ch]
+out = [{'n': c['id'], 'ar': c['name_arabic'], 'en': c['name_simple'], 'ayahs': [], 'rub': []} for c in ch]
 for v in vs:
     s, a = map(int, v['verse_key'].split(':'))
     assert len(out[s - 1]['ayahs']) == a - 1
     out[s - 1]['ayahs'].append(v['text_uthmani'])
+# Rubʿ al-hizb starts (240 quarters; hizb = ceil(rub/4), juz = ceil(rub/8)) as [ayah, rub] per surah.
+for r in sorted(json.load(open(sys.argv[4]))['rub_el_hizbs'], key=lambda r: r['rub_el_hizb_number']):
+    s, span = next(iter(r['verse_mapping'].items()))
+    out[int(s) - 1]['rub'].append([int(span.split('-')[0]), r['rub_el_hizb_number']])
+assert sum(len(x['rub']) for x in out) == 240
 json.dump(out, open(sys.argv[3], 'w'), ensure_ascii=False, separators=(',', ':'))
 PY
 

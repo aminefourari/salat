@@ -12,6 +12,20 @@ final class ReadAlongTests: XCTestCase {
         XCTAssertEqual(QuranText.surahs.reduce(0) { $0 + $1.ayahs.count }, 6236)
         XCTAssertEqual(QuranText.surahs[0].ar, "الفاتحة")
     }
+
+    func testHizbs() {
+        let r = [1, 240].map(RubInfo.init).map { [$0.juz, $0.hizb, $0.quarter] }
+        XCTAssertEqual(r, [[1, 1, 0], [30, 60, 3]])
+        let h = hizbStarts(QuranText.surahs)
+        XCTAssertEqual(h.count, 60)
+        XCTAssertEqual(h[2], HizbStart(hizb: 3, juz: 2, surah: 2, ayah: 142))
+        XCTAssertEqual(h[59], HizbStart(hizb: 60, juz: 30, surah: 87, ayah: 1))
+    }
+
+    func testTafsirText() {
+        XCTAssertEqual(tafsirText("<h2>Title</h2><p>A &amp; B<br>C &#1575;</p><p><span class=\"x\">D</span> <script>x</script></p>"),
+                       ["Title", "A & B", "C ا", "D x"])
+    }
 }
 
 final class RecitationStoreTests: XCTestCase {

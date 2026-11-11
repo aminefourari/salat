@@ -11,6 +11,9 @@ struct QuranView: View {
     @Bindable var settings: AppSettings
     let player: QuranPlayer
     @State private var selection: Int?
+    /// Ayah to open the selected surah at (from the hizb list).
+    @State private var jump: Int?
+    @State private var byHizb = false
     /// Reciter for this listen only; nil = the default from Settings.
     @State private var listenReciter: Int?
 
@@ -19,7 +22,38 @@ struct QuranView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(QuranText.surahs, selection: $selection) { s in
+            VStack(spacing: 0) {
+                Picker("", selection: $byHizb) {
+                    Text(t(.surahs, lang)).tag(false)
+                    Text(t(.hizbs, lang)).tag(true)
+                }
+                .pickerStyle(.segmented).labelsHidden().padding(8)
+                if byHizb { hizbList } else { surahList }
+            }
+            .background(Theme.panelStrong)
+            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+        } detail: {
+            if let n = selection {
+                SurahView(surah: QuranText.surahs[n - 1], settings: settings, player: player, reciter: reciter, startAyah: jump)
+                    .id("\(n):\(jump ?? 0)")
+            } else {
+                Text(t(.chooseSurah, lang)).font(Theme.kufi(22)).foregroundStyle(Theme.soft)
+            }
+        }
+        .themedWindow()
+        .toolbar { toolbar }
+        .navigationTitle(selection.map { QuranText.surahs[$0 - 1].ar } ?? t(.quran, lang))
+        .onAppear { if selection == nil { selection = player.surah ?? settings.d.lastSurah } }
+        .onReceive(NotificationCenter.default.publisher(for: .salatOpenSection)) { _ in jump = nil; selection = settings.d.lastSurah }
+        .onChange(of: selection) { _, n in
+            listenReciter = nil // a per-surah reciter choice doesn't stick
+            if let n { settings.d.lastSurah = n }
+        }
+        .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
+    }
+
+    var surahList: some View {
+            List(QuranText.surahs, selection: Binding(get: { selection }, set: { jump = nil; selection = $0 })) { s in
                 HStack(spacing: 10) {
                     StarBadge(text: s.n.formatted(.number.locale(lang.locale)))
                     VStack(alignment: .leading, spacing: 0) {
@@ -35,26 +69,28 @@ struct QuranView: View {
                 .tag(s.n)
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.panelStrong)
-            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-        } detail: {
-            if let n = selection {
-                SurahView(surah: QuranText.surahs[n - 1], settings: settings, player: player, reciter: reciter)
-                    .id(n)
-            } else {
-                Text(t(.chooseSurah, lang)).font(Theme.kufi(22)).foregroundStyle(Theme.soft)
+    }
+
+    var hizbList: some View {
+        List(hizbStarts(QuranText.surahs), id: \.hizb) { h in
+            let s = QuranText.surahs[h.surah - 1]
+            let fmt = { (n: Int) in n.formatted(.number.locale(lang.locale)) }
+            Button { jump = h.ayah; selection = h.surah } label: {
+                HStack(spacing: 10) {
+                    StarBadge(text: fmt(h.hizb))
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(t(.hizbN, lang, ["n": fmt(h.hizb)])).font(Theme.plex(13, semibold: true))
+                        Text("\(t(.juzN, lang, ["n": fmt(h.juz)])) · \(lang == .ar ? s.ar : s.en) \(fmt(h.ayah))")
+                            .font(Theme.plex(11)).foregroundStyle(Theme.soft)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 2)
+                .contentShape(.rect)
             }
+            .buttonStyle(.plain)
         }
-        .themedWindow()
-        .toolbar { toolbar }
-        .navigationTitle(selection.map { QuranText.surahs[$0 - 1].ar } ?? t(.quran, lang))
-        .onAppear { if selection == nil { selection = player.surah ?? settings.d.lastSurah } }
-        .onReceive(NotificationCenter.default.publisher(for: .salatOpenSection)) { _ in selection = settings.d.lastSurah }
-        .onChange(of: selection) { _, n in
-            listenReciter = nil // a per-surah reciter choice doesn't stick
-            if let n { settings.d.lastSurah = n }
-        }
-        .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
+        .scrollContentBackground(.hidden)
     }
 
     var selectedIsLoaded: Bool { player.surah == selection && player.reciter == reciter && player.state == .ready }
@@ -84,9 +120,24 @@ struct SurahView: View {
     let settings: AppSettings
     let player: QuranPlayer
     let reciter: Int
+    var startAyah: Int?
+    @State private var tafsirAyah: TafsirAyah?
 
     var lang: Lang { settings.d.lang }
     var isCurrent: Bool { player.surah == surah.n && player.reciter == reciter }
+    var rubAt: [Int: Int] { Dictionary(uniqueKeysWithValues: surah.rub.map { ($0[0], $0[1]) }) }
+
+    /// Juz/hizb/quarter marker shown above the ayah where a rubʿ starts (same wording as the website).
+    func rubLabel(_ rub: Int) -> String {
+        let r = RubInfo(rub), fmt = { (n: Int) in n.formatted(.number.locale(lang.locale)) }
+        let n = ["n": fmt(r.hizb)]
+        switch r.quarter {
+        case 1: return t(.rub1, lang, n)
+        case 2: return t(.rub2, lang, n)
+        case 3: return t(.rub3, lang, n)
+        default: return (rub % 8 == 1 ? t(.juzN, lang, ["n": fmt(r.juz)]) + " · " : "") + t(.hizbN, lang, n)
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -99,15 +150,26 @@ struct SurahView: View {
                             Text(bismillah).font(.custom(quranFont, size: 28)).foregroundStyle(Theme.gold)
                                 .frame(maxWidth: .infinity).padding(.vertical, 10)
                         }
+                        let rubs = rubAt
                         ForEach(Array(surah.ayahs.enumerated()), id: \.offset) { i, text in
                             let a = i + 1
                             let playing = isCurrent && player.currentAyah == a
-                            (Text(text).foregroundStyle(Theme.ink) + Text(" \u{FD3F}\(arabicDigits(a))\u{FD3E}").foregroundStyle(Theme.gold))
-                                .font(.custom(quranFont, size: 28))
-                                .lineSpacing(14)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 10).padding(.horizontal, 16)
+                            VStack(alignment: .leading, spacing: 2) {
+                                if let rub = rubs[a] {
+                                    HStack(spacing: 10) {
+                                        Rectangle().fill(Theme.gold.opacity(0.35)).frame(height: 1)
+                                        Text(rubLabel(rub)).font(Theme.plex(12, semibold: true)).foregroundStyle(Theme.gold).fixedSize()
+                                        Rectangle().fill(Theme.gold.opacity(0.35)).frame(height: 1)
+                                    }
+                                    .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
+                                    .padding(.top, 10)
+                                }
+                                (Text(text).foregroundStyle(Theme.ink) + Text(" \u{FD3F}\(arabicDigits(a))\u{FD3E}").foregroundStyle(Theme.gold))
+                                    .font(.custom(quranFont, size: 28))
+                                    .lineSpacing(14)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 10).padding(.horizontal, 16)
                                 .background(playing ? Theme.gold.opacity(0.14) : .clear, in: .rect(cornerRadius: 14))
                                 .overlay { if playing { RoundedRectangle(cornerRadius: 14).stroke(Theme.gold.opacity(0.7), lineWidth: 1) } }
                                 .contentShape(.rect)
@@ -116,7 +178,11 @@ struct SurahView: View {
                                     if player.state == .ready && isCurrent { player.seek(toAyah: a); player.resume() }
                                     else { Task { await player.play(surah: surah.n, reciter: reciter, fromAyah: a) } }
                                 }
-                                .id(a)
+                            Button(t(.tafsir, lang), systemImage: "book") { tafsirAyah = TafsirAyah(surah: surah.n, ayah: a) }
+                                .buttonStyle(.borderless).font(Theme.plex(11)).foregroundStyle(Theme.soft)
+                                .padding(.horizontal, 16)
+                            }
+                            .id(a)
                         }
                     }
                     .padding(24)
@@ -124,7 +190,11 @@ struct SurahView: View {
                     .frame(maxWidth: .infinity)
                     .environment(\.layoutDirection, .rightToLeft)
                 }
-                .onAppear { if settings.d.lastSurah == surah.n, settings.d.lastAyah > 1 { proxy.scrollTo(settings.d.lastAyah, anchor: .top) } }
+                .onAppear {
+                    let start = startAyah ?? (settings.d.lastSurah == surah.n ? settings.d.lastAyah : 1)
+                    if let startAyah { settings.d.lastAyah = startAyah }
+                    if start > 1 { proxy.scrollTo(start, anchor: .top) }
+                }
                 .onChange(of: player.currentAyah) { _, a in
                     guard isCurrent, let a else { return }
                     settings.d.lastAyah = a
@@ -132,6 +202,7 @@ struct SurahView: View {
                 }
             }
         }
+        .sheet(item: $tafsirAyah) { TafsirSheet(item: $0, lang: lang) }
     }
 
     /// Surah title card under a small arch.
@@ -234,5 +305,66 @@ struct StarBadge: View {
             Text(text).font(Theme.plex(10, semibold: true)).monospacedDigit().foregroundStyle(Theme.ink)
         }
         .frame(width: 32, height: 32)
+    }
+}
+
+struct TafsirAyah: Identifiable { let surah, ayah: Int; var id: Int { surah * 1000 + ayah } }
+
+/// Tafsir of one ayah, fetched from quran.com (URLCache keeps it per the API's cache headers).
+struct TafsirSheet: View {
+    let item: TafsirAyah
+    let lang: Lang
+    @Environment(\.dismiss) private var dismiss
+    @State private var texts: [[String]]?
+    @State private var failed = false
+    var sources: [TafsirSource] { TafsirSource.forLang(lang) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("\(t(.tafsir, lang)) · \(QuranText.surahs[item.surah - 1].ar) \(arabicDigits(item.ayah))").font(Theme.kufi(18))
+                Spacer()
+                Button(t(.cancel, lang), systemImage: "xmark.circle.fill") { dismiss() }.labelStyle(.iconOnly).buttonStyle(.borderless)
+                    .keyboardShortcut(.cancelAction)
+            }
+            if failed {
+                Label(t(.loadFailed, lang), systemImage: "wifi.slash").foregroundStyle(Theme.gold)
+                Button(t(.retry, lang)) { Task { await load() } }.buttonStyle(GoldOutlineButtonStyle())
+            } else if let texts {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(sources.enumerated()), id: \.offset) { i, src in
+                            VStack(alignment: .leading, spacing: 8) {
+                                if sources.count > 1 { Text(src.name).font(Theme.plex(13, semibold: true)).foregroundStyle(Theme.gold) }
+                                ForEach(Array(texts[i].enumerated()), id: \.offset) { _, p in
+                                    Text(p).font(src.isArabic ? .custom("Amiri", size: 18) : Theme.plex(14)).lineSpacing(src.isArabic ? 8 : 3)
+                                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                            .environment(\.layoutDirection, src.isArabic ? .rightToLeft : .leftToRight)
+                        }
+                    }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
+            }
+        }
+        .padding(20)
+        .frame(width: 560, height: 520, alignment: .top)
+        .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
+        .task { await load() }
+    }
+
+    func load() async {
+        failed = false
+        struct API: Decodable { struct T: Decodable { let text: String }; let tafsir: T }
+        do {
+            var out: [[String]] = []
+            for src in sources {
+                let (data, _) = try await URLSession.shared.data(from: src.url(surah: item.surah, ayah: item.ayah))
+                out.append(tafsirText(try JSONDecoder().decode(API.self, from: data).tafsir.text))
+            }
+            texts = out
+        } catch { failed = true }
     }
 }
