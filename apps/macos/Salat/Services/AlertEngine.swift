@@ -2,6 +2,7 @@ import AppKit
 import CoreLocation
 import Observation
 import UserNotifications
+import WidgetKit
 
 /// Computes today's times every second and fires the adhan / notifications. Recomputing each tick
 /// (three computeDay calls) is what makes sleep, time-zone changes, midnight and settings changes "just work".
@@ -88,11 +89,26 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
                 ?? computeDay(lat: loc.lat, lon: loc.lon, date: date, method: method, asr: s.asr)).map { adjustDay($0, s.adjust) }
         }
         today = days[1]; tomorrow = days[2]
+        updateWidget(days.compactMap { $0 })
         official = habous && habousDay(s.habous, place: place, date: dates[1]) != nil
         let due = clock.step(days: days.compactMap { $0 }, modes: s.modes, reminder: s.reminder, extras: extras, now: now)
         guard !due.isEmpty else { return }
         settings.d.lastAlertHandled = now // persisted so a relaunch doesn't replay these
         for (e, late) in due { fire(e, late: late) }
+    }
+
+    private var widgetData: WidgetData?
+
+    /// Hands the widget the coming times and labels; rewritten (and the widget reloaded) only when they change.
+    private func updateWidget(_ days: [DayTimes]) {
+        let s = settings.d
+        let data = WidgetData(names: Prayer.allCases.map { prayerName($0, s.lang) }, next: t(.next, s.lang), place: loc?.city?.name,
+                              rtl: s.lang.isRTL, days: days.map { d in Prayer.allCases.map { d[$0] } })
+        guard data != widgetData else { return }
+        widgetData = data
+        try? FileManager.default.createDirectory(at: WidgetData.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? JSONEncoder().encode(data).write(to: WidgetData.url, options: .atomic)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Asks the Worker for a whole month when today or tomorrow isn't cached yet, so it asks about once a month.

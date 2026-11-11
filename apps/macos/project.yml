@@ -32,6 +32,7 @@ targets:
         buildPhase: resources
     dependencies:
       - package: Adhan
+      - target: SalatWidget
     info:
       path: Salat/Info.plist
       properties:
@@ -48,6 +49,36 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: local.salat.mac
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  SalatWidget:
+    # Desktop / Notification Center widget. Sandboxed (WidgetKit requires it); it only reads WidgetData.
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Widget
+        excludes: ["*.entitlements", "Info.plist"]
+      - path: Salat/Core/WidgetData.swift
+      - path: Salat/Resources/ReemKufi.ttf
+        buildPhase: resources
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: Salat
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ATSApplicationFontsPath: .
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widget/SalatWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # The times the menu-bar app writes (WidgetData.swift): an unsigned app can't share an App Group.
+        com.apple.security.temporary-exception.files.home-relative-path.read-only:
+          - /Library/Application Support/Salat/
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.salat.mac.widget
+        SKIP_INSTALL: YES
   SalatTests:
     type: bundle.unit-test
     platform: macOS

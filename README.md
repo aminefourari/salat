@@ -6,6 +6,9 @@ Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is 
 
 - **Web app** (`apps/web`): an installable PWA on Cloudflare Workers.
   - Today's prayer times for your location, with push notifications at each prayer and 10 minutes before.
+  - Optional reminders for the morning and evening adhkar, and on Fridays for Surat al-Kahf and Jumuʿah.
+  - Per-prayer minute adjustments to match your mosque, a Hijri date offset, and imsak/iftar during Ramadan.
+  - A printable monthly timetable.
   - A Qibla compass.
   - A Quran reader with streamed recitation and read-along highlighting.
   - Hisn al-Muslim adhkar with audio.
@@ -15,6 +18,8 @@ Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is 
     Mishary Alafasy, Al-Aqsa and Abdul Basit download on first use, and you can add your own recording.
   - A Quran reader with eight reciters and read-along highlighting, available offline.
   - Hisn al-Muslim adhkar in Arabic, English and French, with audio.
+  - The same reminders, adjustments, Hijri offset and Ramadan times as the website.
+  - A desktop and Notification Center widget with the next prayer and today's times.
 
 Both apps compute the same prayer times to the minute. The website's method table is ported to Swift, and a shared
 test fixture keeps the two in sync.
