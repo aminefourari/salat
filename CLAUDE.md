@@ -34,6 +34,7 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - `.github/workflows/`: `ci.yml` (web + Swift tests on push/PR), `release.yml` (tag `v*` → GitHub Release with unsigned `Salat-vX.zip`)
 - `apps/macos/Salat/Core`: Swift ports of methods/prayer math, scheduler, strings, settings
 - `apps/macos/Salat/{Services,Quran,Adhkar,UI}`: location, adhan alerts, Quran reader/player, Hisn al-Muslim adhkar (text + cached audio), SwiftUI views
+- `apps/macos/Widget`: WidgetKit extension (sandboxed). It computes nothing: `AlertEngine` writes `~/Library/Application Support/Salat/widget.json` (`Core/WidgetData.swift`) and the widget reads it through a read-only sandbox exception (no App Group without a signing team). Entitlements live in `project.yml`; XcodeGen rewrites the `.entitlements` file
 - `apps/macos/project.yml`: XcodeGen spec (no `.xcodeproj` committed). The test target compiles the pure sources directly (no app host); add new pure files there too.
 - `apps/macos/Salat/Resources/ATTRIBUTION.md`: licenses of the bundled Quran text, font, adhans, borders, cities
 
@@ -43,6 +44,8 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - Parity rule: changing `methods.ts`/`paramsFor` → port it to `Core/Methods.swift`, then `UPDATE_MAC_DATA=1 npm test` (regenerates `fixtures/parity.json` and the Mac's borders/cities resources) and `npm run mac:test`.
 - Per-country method config is data in `methods.ts` / `Methods.swift`; adding a country is one entry in each.
 - Times are formatted in the device's/subscription's IANA time zone, never UTC.
+- User minute offsets (`adjustDay` / Swift `adjustDay`) apply after `computeDay` or Habous, never inside it, so parity fixtures stay pure.
+- Reminder kinds (`lib/schedule.ts` `dayEvents`, Swift `Scheduler.swift` `Extras`) are the same in both apps: prayer start, 10 min before, adhkar (Fajr/Asr + 20 min, chapter 27), Friday Kahf (sunrise + 1 h) and Jumuʿah (Dhuhr − 45 min).
 - Morocco (method `morocco`, standard Asr): official Habous times, imported once per month from habous.gov.ma into D1 (`habous_times`, `server/habous.ts`) and served by the Worker's `/api/habous?month=` (clients fetch a month and keep it) (web `useDays`, cron, Mac `AlertEngine` + `Core/Habous.swift`); the 19°/17° calculation is the fallback.
 - No accounts, analytics, or third-party client calls. Exceptions (audio only): recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and adhkar audio from `www.hisnmuslim.com`. The Mac app caches them offline; the website streams them directly from the browser (user decision).
 - UI changes on the Mac: check them with `Salat.app/Contents/MacOS/Salat -snapshot DIR` (renders the menu and each window section: times, Quran, adhkar, in dark and light) and refresh `docs/screenshots/`.

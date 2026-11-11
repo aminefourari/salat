@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeDay, dateIn, type Settings } from '../src/lib/prayer'
-import { dueEvents, type Sub } from '../src/lib/schedule'
+import { dayEvents, dueEvents, type Sub } from '../src/lib/schedule'
 
 const settings: Settings = { method: 'aachen', asr: 'standard', lang: 'en' }
 const sub = (o: Partial<Sub> = {}): Sub => ({
@@ -56,5 +56,30 @@ describe('dueEvents', () => {
       expect(forDay.length, day).toBe(10)
       expect(new Set(forDay).size).toBe(10)
     }
+  })
+})
+
+describe('adjustments and extra reminders', () => {
+  it('shifts prayer events by the per-prayer offset', () => {
+    const adjusted = new Date(isha.getTime() + 3 * MIN)
+    const s = sub({ settings: { ...settings, adjust: { isha: 3 } }, lastSentAt: adjusted.getTime() - MIN })
+    expect(dueEvents(s, adjusted).map(e => [e.kind, e.prayerTime.getTime()])).toEqual([['start', adjusted.getTime()]])
+    expect(dueEvents({ ...s, lastSentAt: isha.getTime() - MIN }, isha)).toEqual([])
+  })
+
+  it('morning adhkar 20 min after Fajr, evening adhkar 20 min after Asr, only when on', () => {
+    const day = computeDay(53.4319, 11.1903, '2026-11-11', 'Europe/Berlin', settings)
+    const ev = dayEvents({ notifyStart: false, notifyReminder: false, notifyAdhkar: true }, '2026-11-11', day)
+    expect(ev.map(e => [e.kind, e.at.getTime() - day[e.prayer].getTime()])).toEqual([['adhkarMorning', 20 * MIN], ['adhkarEvening', 20 * MIN]])
+    expect(dayEvents({ notifyStart: false, notifyReminder: false }, '2026-11-11', day)).toEqual([])
+  })
+
+  it('Friday: Surat al-Kahf an hour after sunrise and Jumuʿah 45 min before Dhuhr; nothing on other days', () => {
+    const fri = computeDay(53.4319, 11.1903, '2026-11-13', 'Europe/Berlin', settings)
+    const ev = dayEvents({ notifyStart: false, notifyReminder: false, notifyFriday: true }, '2026-11-13', fri)
+    expect(ev.map(e => e.kind)).toEqual(['kahf', 'jumuah'])
+    expect(ev[0].at.getTime()).toBe(fri.sunrise.getTime() + 60 * MIN)
+    expect(ev[1].at.getTime()).toBe(fri.dhuhr.getTime() - 45 * MIN)
+    expect(dayEvents({ notifyStart: false, notifyReminder: false, notifyFriday: true }, '2026-11-12', fri)).toEqual([])
   })
 })

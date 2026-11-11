@@ -26,6 +26,10 @@ final class AppSettings {
         var lastAdhkarChapter: Int? = nil
         var adhanDefaultsV2: Bool? = nil
         var habous: HabousDays? = nil // last official Moroccan times from the Worker, for offline use
+        var adjust: [Prayer: Int]? = nil // minutes added per prayer (local mosque)
+        var hijriOffset: Int? = nil // days added to the Hijri date; nil = automatic
+        var adhkarReminder: Bool? = nil
+        var fridayReminder: Bool? = nil
     }
 
     private static let key = "settings.v1"

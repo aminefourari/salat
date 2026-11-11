@@ -43,7 +43,7 @@ describe('habous', () => {
     const dayTimes = habousDayTimes(store)
     const row = (lat: number, lon: number, asr = 'standard'): Row => ({
       endpoint: 'e', p256dh: '', auth: '', lat, lon, tz: TZ, method: 'auto', asr, lang: 'fr',
-      notify_start: 1, notify_reminder: 1, last_sent_at: 0, updated_at: 0,
+      notify_start: 1, notify_reminder: 1, notify_adhkar: 0, notify_friday: 0, adjust: '{}', last_sent_at: 0, updated_at: 0,
     })
     const now = new Date('2026-11-11T12:00:00Z')
     const times = (await dayTimes(row(CASA.lat, CASA.lon), now))!

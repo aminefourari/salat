@@ -49,6 +49,7 @@ struct QuranView: View {
         .toolbar { toolbar }
         .navigationTitle(selection.map { QuranText.surahs[$0 - 1].ar } ?? t(.quran, lang))
         .onAppear { if selection == nil { selection = player.surah ?? settings.d.lastSurah } }
+        .onReceive(NotificationCenter.default.publisher(for: .salatOpenSection)) { _ in selection = settings.d.lastSurah }
         .onChange(of: selection) { _, n in
             listenReciter = nil // a per-surah reciter choice doesn't stick
             if let n { settings.d.lastSurah = n }

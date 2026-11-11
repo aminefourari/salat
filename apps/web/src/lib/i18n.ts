@@ -31,6 +31,14 @@ const en = {
   loadFailed: "Couldn't load. Check your connection.", quran: 'Quran', adhkar: 'Adhkar', reciter: 'Reciter', play: 'Play', pause: 'Pause', search: 'Search',
   ayahs: '{n} ayahs', allSurahs: 'All surahs', allCategories: 'All categories', loading: 'Loading…',
   audioError: "Couldn't load the recitation. Check your connection and try again.", defaultReciter: 'Quran reciter',
+  'notif.adhkarMorning': 'Morning adhkar — tap to read them', 'notif.adhkarEvening': 'Evening adhkar — tap to read them',
+  'notif.kahf': "It's Friday: read Surat al-Kahf — tap to open it", 'notif.jumuah': 'Jumuʿah today — Dhuhr at {time}',
+  notifyAdhkar: 'Morning and evening adhkar', notifyFriday: 'Friday: Surat al-Kahf and Jumuʿah',
+  adjustments: 'Adjust times (minutes)', adjustHint: 'Add or remove minutes to match your mosque.',
+  hijriOffset: 'Hijri date', hijriAuto: 'Automatic ({n})', days: '{n} days',
+  ramadan: 'Ramadan', imsak: 'Imsak', iftar: 'Iftar',
+  monthly: 'Monthly timetable', print: 'Print', prevMonth: 'Previous month', nextMonth: 'Next month', date: 'Date',
+  continueReading: 'Continue: {surah}, ayah {ayah}',
 }
 type Key = keyof typeof en
 
@@ -64,6 +72,14 @@ const fr: Record<Key, string> = {
   loadFailed: 'Chargement impossible. Vérifiez votre connexion.', quran: 'Coran', adhkar: 'Adhkar', reciter: 'Récitateur', play: 'Lecture', pause: 'Pause', search: 'Rechercher',
   ayahs: '{n} versets', allSurahs: 'Toutes les sourates', allCategories: 'Toutes les catégories', loading: 'Chargement…',
   audioError: 'Impossible de charger la récitation. Vérifiez votre connexion et réessayez.', defaultReciter: 'Récitateur du Coran',
+  'notif.adhkarMorning': 'Adhkar du matin — touchez pour les lire', 'notif.adhkarEvening': 'Adhkar du soir — touchez pour les lire',
+  'notif.kahf': "C'est vendredi : lisez la sourate al-Kahf — touchez pour l'ouvrir", 'notif.jumuah': "Joumouʿa aujourd'hui — Dhuhr à {time}",
+  notifyAdhkar: 'Adhkar du matin et du soir', notifyFriday: 'Vendredi : sourate al-Kahf et Joumouʿa',
+  adjustments: 'Ajuster les horaires (minutes)', adjustHint: 'Ajoutez ou retirez des minutes pour suivre votre mosquée.',
+  hijriOffset: 'Date hégirienne', hijriAuto: 'Automatique ({n})', days: '{n} jours',
+  ramadan: 'Ramadan', imsak: 'Imsak', iftar: 'Iftar',
+  monthly: 'Horaires du mois', print: 'Imprimer', prevMonth: 'Mois précédent', nextMonth: 'Mois suivant', date: 'Date',
+  continueReading: 'Reprendre : {surah}, verset {ayah}',
 }
 
 const ar: Record<Key, string> = {
@@ -96,6 +112,14 @@ const ar: Record<Key, string> = {
   loadFailed: 'تعذّر التحميل. تحقق من اتصالك.', quran: 'القرآن', adhkar: 'الأذكار', reciter: 'القارئ', play: 'تشغيل', pause: 'إيقاف مؤقت', search: 'بحث',
   ayahs: '{n} آية', allSurahs: 'كل السور', allCategories: 'كل الأبواب', loading: 'جارٍ التحميل…',
   audioError: 'تعذّر تحميل التلاوة. تحقق من اتصالك وأعد المحاولة.', defaultReciter: 'قارئ القرآن',
+  'notif.adhkarMorning': 'أذكار الصباح — اضغط لقراءتها', 'notif.adhkarEvening': 'أذكار المساء — اضغط لقراءتها',
+  'notif.kahf': 'اليوم الجمعة: اقرأ سورة الكهف — اضغط لفتحها', 'notif.jumuah': 'صلاة الجمعة اليوم — الظهر الساعة {time}',
+  notifyAdhkar: 'أذكار الصباح والمساء', notifyFriday: 'الجمعة: سورة الكهف وصلاة الجمعة',
+  adjustments: 'تعديل المواقيت (بالدقائق)', adjustHint: 'أضف أو أنقص دقائق لتوافق مسجدك.',
+  hijriOffset: 'التاريخ الهجري', hijriAuto: 'تلقائي ({n})', days: '{n} أيام',
+  ramadan: 'رمضان', imsak: 'الإمساك', iftar: 'الإفطار',
+  monthly: 'مواقيت الشهر', print: 'طباعة', prevMonth: 'الشهر السابق', nextMonth: 'الشهر التالي', date: 'التاريخ',
+  continueReading: 'متابعة: {surah}، الآية {ayah}',
 }
 
 const DICT: Record<Lang, Record<Key, string>> = { en, fr, ar }
