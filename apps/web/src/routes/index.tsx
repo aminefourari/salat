@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { PRAYER_ICONS } from '../components/icons'
 import { tz, useDays, useLocation, useNow, useSettings, type Loc } from '../lib/client'
 import { t } from '../lib/i18n'
-import { formatHM, nextPrayer, PRAYERS, resolveMethod, skyAt, type DayTimes, type Lang, type Prayer } from '../lib/prayer'
+import { formatHM, hijriDate, hijriOffset, imsak, nextPrayer, PRAYERS, resolveMethod, skyAt, type DayTimes, type Lang, type Prayer } from '../lib/prayer'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -22,12 +22,18 @@ function progress(today: DayTimes, nextAt: Date, now: Date) {
   return Math.min(1, Math.max(0, (now.getTime() - prev) / (nextAt.getTime() - prev)))
 }
 
-function dates(now: Date, lang: Lang) {
-  const greg = now.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })
-  let hijri = ''
-  try { hijri = new Intl.DateTimeFormat(`${lang}-u-ca-islamic-umalqura`, { day: 'numeric', month: 'long', year: 'numeric' }).format(now) } catch {}
-  return { greg, hijri }
+/** Ramadan line: the next of imsak (end of suhoor) or iftar (Maghrib), with its countdown. */
+function ramadanLine(today: DayTimes, tomorrow: DayTimes, now: Date, lang: Lang, zone: string) {
+  const [key, at] = now < imsak(today) ? ['imsak', imsak(today)] as const
+    : now < today.maghrib ? ['iftar', today.maghrib] as const : ['imsak', imsak(tomorrow)] as const
+  return `${t(lang, 'ramadan')} · ${t(lang, key)} ${formatHM(at, zone)} · ${t(lang, 'inTime', { time: countdown(at.getTime() - now.getTime()) })}`
 }
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+    <rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" />
+  </svg>
+)
 
 const placeLabel = (loc: Loc, lang: Lang) =>
   t(lang, 'lastLocation', {
@@ -53,12 +59,20 @@ function Home() {
 
   const zone = tz()
   const next = nextPrayer(days.today, days.tomorrow, now)
-  const { greg, hijri } = dates(now, lang)
+  const greg = now.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })
+  // Ramadan starts at the Maghrib before its first day: count from tonight once Maghrib has passed.
+  const offset = hijriOffset(loc.lat, loc.lon, settings)
+  const hijri = hijriDate(now, offset, lang)
+  const tonight = now >= days.today.maghrib ? hijriDate(new Date(now.getTime() + DAY), offset, lang) : hijri
   const pct = progress(days.today, next.at, now)
 
   return (
     <>
-      <p className="dates"><span>{greg}</span>{hijri && <span className="hijri">{hijri}</span>}</p>
+      <p className="dates">
+        <span>{greg} <Link to="/month" className="month-link" aria-label={t(lang, 'monthly')} title={t(lang, 'monthly')}><CalendarIcon /></Link></span>
+        {hijri && <span className="hijri">{hijri.label}</span>}
+        {tonight?.month === 9 && <span className="ramadan">{ramadanLine(days.today, days.tomorrow, now, lang, zone)}</span>}
+      </p>
 
       <section className="hero" aria-live="polite">
         <svg className="arch" viewBox="0 0 200 260" preserveAspectRatio="none" aria-hidden="true">

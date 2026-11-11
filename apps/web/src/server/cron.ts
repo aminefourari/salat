@@ -1,15 +1,17 @@
 import { t } from '../lib/i18n'
 import type { MethodId } from '../lib/methods'
-import { dateIn, formatHM, nextDate, usesHabous, type DayTimes, type Lang, type Settings } from '../lib/prayer'
-import { dueEvents, type Sub } from '../lib/schedule'
-import { habousDays, type HabousStore } from './habous'
+import { dateIn, formatHM, nextDate, usesHabous, type Adjust, type DayTimes, type Lang, type Settings } from '../lib/prayer'
+import { dueEvents, type DueEvent, type Sub } from '../lib/schedule'
+import { ensureMonth, habousDays, type HabousStore } from './habous'
 
 export type Row = {
   endpoint: string; p256dh: string; auth: string; lat: number; lon: number; tz: string
   method: string; asr: string; lang: string; notify_start: number; notify_reminder: number
+  notify_adhkar: number; notify_friday: number; adjust: string // JSON Adjust
   last_sent_at: number; updated_at: number
 }
-export type Payload = { title: string; body: string; tag: string }
+/** `url`: the page a tap opens (adhkar, Surat al-Kahf). */
+export type Payload = { title: string; body: string; tag: string; url?: string }
 export type SendResult = 'ok' | 'gone' | 'error'
 export type Store = {
   all(): Promise<Row[]>
@@ -29,11 +31,40 @@ export const habousDayTimes = (store: HabousStore): DayTimesFor => async (row, n
   return days ? date => days.get(date) ?? null : undefined
 }
 
+const parseAdjust = (json: string): Adjust | undefined => { try { return JSON.parse(json) } catch { return undefined } }
+
 export const toSub = (r: Row): Sub => ({
   lat: r.lat, lon: r.lon, tz: r.tz,
-  settings: { method: r.method as MethodId | 'auto', asr: r.asr as Settings['asr'], lang: r.lang as Lang },
-  notifyStart: !!r.notify_start, notifyReminder: !!r.notify_reminder, lastSentAt: r.last_sent_at,
+  settings: { method: r.method as MethodId | 'auto', asr: r.asr as Settings['asr'], lang: r.lang as Lang, adjust: parseAdjust(r.adjust) },
+  notifyStart: !!r.notify_start, notifyReminder: !!r.notify_reminder, notifyAdhkar: !!r.notify_adhkar, notifyFriday: !!r.notify_friday,
+  lastSentAt: r.last_sent_at,
 })
+
+/** Morning and evening adhkar are one chapter of Hisn al-Muslim (data/adhkar.json). */
+export const ADHKAR_CHAPTER = 27
+const KAHF = 18
+
+export function payloadFor(e: DueEvent, lang: Lang, tz: string): Payload {
+  const vars = { prayer: t(lang, e.prayer), time: formatHM(e.prayerTime, tz) }
+  const tag = `${e.prayer}-${e.kind}`
+  switch (e.kind) {
+    case 'start': return { title: 'Salat', body: t(lang, 'notif.start', vars), tag }
+    case 'reminder': return { title: 'Salat', body: t(lang, 'notif.reminder', vars), tag }
+    case 'adhkarMorning': return { title: 'Salat', body: t(lang, 'notif.adhkarMorning'), tag, url: `/adhkar?c=${ADHKAR_CHAPTER}` }
+    case 'adhkarEvening': return { title: 'Salat', body: t(lang, 'notif.adhkarEvening'), tag, url: `/adhkar?c=${ADHKAR_CHAPTER}` }
+    case 'kahf': return { title: 'Salat', body: t(lang, 'notif.kahf'), tag, url: `/quran?s=${KAHF}` }
+    case 'jumuah': return { title: 'Salat', body: t(lang, 'notif.jumuah', vars), tag }
+  }
+}
+
+/** From the 25th, imports next month's Habous timetable so a late or failing habous.gov.ma shows up days ahead
+ *  (ensureMonth logs failures and retries every 10 min) instead of at midnight on the 1st. */
+export async function prefetchHabous(store: HabousStore, now: Date) {
+  const today = dateIn(now, 'Africa/Casablanca')
+  if (Number(today.slice(8)) < 25) return
+  const [y, m] = today.split('-').map(Number)
+  await ensureMonth(store, m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`)
+}
 
 // ponytail: scans every row each minute; fine for a handful of devices, add a next_due_at column if it grows.
 export async function runCron(store: Store, now: Date, send: (r: Row, p: Payload) => Promise<SendResult>, dayTimesFor?: DayTimesFor) {
@@ -44,9 +75,7 @@ export async function runCron(store: Store, now: Date, send: (r: Row, p: Payload
       if (!events.length) continue
       let ok = true
       for (const e of events) {
-        const lang = sub.settings.lang
-        const vars = { prayer: t(lang, e.prayer), time: formatHM(e.prayerTime, row.tz) }
-        const res = await send(row, { title: 'Salat', body: t(lang, e.kind === 'start' ? 'notif.start' : 'notif.reminder', vars), tag: `${e.prayer}-${e.kind}` })
+        const res = await send(row, payloadFor(e, sub.settings.lang, row.tz))
         if (res === 'gone') { await store.remove(row.endpoint); ok = false; break }
         if (res === 'error') ok = false
       }

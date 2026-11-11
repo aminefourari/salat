@@ -8,9 +8,11 @@ import { VAPID_PUBLIC_KEY } from '../lib/config'
 import { t } from '../lib/i18n'
 import { METHOD_IDS } from '../lib/methods'
 import { RECITERS } from '../lib/quran'
-import { resolveMethod, type Lang, type Settings } from '../lib/prayer'
+import { hijriOffset, MAX_ADJUST, PRAYERS, resolveMethod, type Lang, type Settings } from '../lib/prayer'
 
 export const Route = createFileRoute('/settings')({ component: SettingsPage })
+
+const signed = (n: number) => (n > 0 ? `+${n}` : String(n))
 
 type PushState = 'loading' | 'on' | 'off' | 'denied' | 'unsupported' | 'install'
 
@@ -64,6 +66,30 @@ function SettingsPage() {
             <option value="hanafi">{t(lang, 'hanafi')}</option>
           </select>
         </div>
+        <div className="field">
+          <label htmlFor="hijri">{t(lang, 'hijriOffset')}</label>
+          <select id="hijri" value={s.hijri ?? 'auto'} onChange={e => update({ hijri: e.target.value === 'auto' ? undefined : Number(e.target.value) })}>
+            <option value="auto">{t(lang, 'hijriAuto', { n: signed(loc ? hijriOffset(loc.lat, loc.lon, { ...s, hijri: undefined }) : 0) })}</option>
+            {[-2, -1, 0, 1, 2].map(n => <option key={n} value={n}>{t(lang, 'days', { n: signed(n) })}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <h2>{t(lang, 'adjustments')}</h2>
+      <div className="panel">
+        <p className="meta">{t(lang, 'adjustHint')}</p>
+        <div className="adjust">
+          {PRAYERS.map(p => (
+            <label key={p} className="field">
+              {t(lang, p)}
+              <input type="number" inputMode="numeric" min={-MAX_ADJUST} max={MAX_ADJUST} step={1} value={s.adjust?.[p] ?? 0}
+                onChange={e => {
+                  const v = Math.max(-MAX_ADJUST, Math.min(MAX_ADJUST, Math.trunc(Number(e.target.value) || 0)))
+                  update({ adjust: { ...s.adjust, [p]: v } })
+                }} />
+            </label>
+          ))}
+        </div>
       </div>
 
       <h2>{t(lang, 'quran')}</h2>
@@ -85,6 +111,14 @@ function SettingsPage() {
         <label className="switch-row">
           {t(lang, 'notifyReminder')}
           <input className="switch" type="checkbox" role="switch" checked={notify.reminder} onChange={e => setNotify({ ...notify, reminder: e.target.checked })} />
+        </label>
+        <label className="switch-row">
+          {t(lang, 'notifyAdhkar')}
+          <input className="switch" type="checkbox" role="switch" checked={notify.adhkar} onChange={e => setNotify({ ...notify, adhkar: e.target.checked })} />
+        </label>
+        <label className="switch-row">
+          {t(lang, 'notifyFriday')}
+          <input className="switch" type="checkbox" role="switch" checked={notify.friday} onChange={e => setNotify({ ...notify, friday: e.target.checked })} />
         </label>
       </div>
       <div className="panel" role="status">

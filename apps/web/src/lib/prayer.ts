@@ -4,7 +4,11 @@ import { countryAt, methodForCountry, type MethodId } from './methods'
 export type Prayer = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
 export const PRAYERS: Prayer[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 export type Lang = 'ar' | 'en' | 'fr'
-export type Settings = { method: MethodId | 'auto'; asr: 'standard' | 'hanafi'; lang: Lang }
+export type Adjust = Partial<Record<Prayer, number>>
+/** Per-prayer offsets are limited to ±30 min. */
+export const MAX_ADJUST = 30
+/** `adjust`: minutes added to each prayer (local mosque offsets). `hijri`: days added to the Hijri date (unset = auto). */
+export type Settings = { method: MethodId | 'auto'; asr: 'standard' | 'hanafi'; lang: Lang; adjust?: Adjust; hijri?: number }
 export type DayTimes = { sunrise: Date } & Record<Prayer, Date>
 
 export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true } = {}): CalculationParameters {
@@ -49,6 +53,30 @@ export function computeDay(lat: number, lon: number, date: string, _tz: string, 
   const pt = new PrayerTimes(new Coordinates(lat, lon), new Date(y, m - 1, d), params ?? paramsFor(resolveMethod(lat, lon, s), s.asr))
   return { fajr: pt.fajr, sunrise: pt.sunrise, dhuhr: pt.dhuhr, asr: pt.asr, maghrib: pt.maghrib, isha: pt.isha }
 }
+
+/** `day` with the user's per-prayer minute offsets applied (on top of the calculation or the Habous timetable). */
+export function adjustDay(day: DayTimes, adjust: Adjust | undefined): DayTimes {
+  if (!adjust) return day
+  const out = { ...day }
+  for (const p of PRAYERS) if (adjust[p]) out[p] = new Date(day[p].getTime() + adjust[p]! * 60_000)
+  return out
+}
+
+/** Days to add to the Umm al-Qura date: the user's choice, else −1 in Morocco (sighting usually a day after Makkah). */
+export const hijriOffset = (lat: number, lon: number, s: Settings) => s.hijri ?? (resolveMethod(lat, lon, s) === 'morocco' ? -1 : 0)
+
+/** Hijri date of `d` shifted by `offset` days: its month number (9 = Ramadan) and a long label in `lang`. */
+export function hijriDate(d: Date, offset: number, lang: Lang): { month: number; label: string } | null {
+  const at = new Date(d.getTime() + offset * 86_400_000)
+  try {
+    const month = Number(new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { month: 'numeric' }).formatToParts(at).find(p => p.type === 'month')?.value)
+    const label = new Intl.DateTimeFormat(`${lang}-u-ca-islamic-umalqura`, { day: 'numeric', month: 'long', year: 'numeric' }).format(at)
+    return { month, label }
+  } catch { return null }
+}
+
+/** Imsak: the customary 10 minutes before Fajr, when suhoor stops. */
+export const imsak = (day: DayTimes) => new Date(day.fajr.getTime() - 10 * 60_000)
 
 export const formatHM = (d: Date, tz: string) =>
   d.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })

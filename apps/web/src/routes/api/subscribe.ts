@@ -13,11 +13,13 @@ export const Route = createFileRoute('/api/subscribe')({
         const now = Date.now()
         // New rows start "sent up to now" so nothing old is replayed; updates keep their last_sent_at.
         await env.DB.prepare(
-          `INSERT INTO subscriptions (endpoint, p256dh, auth, lat, lon, tz, method, asr, lang, notify_start, notify_reminder, last_sent_at, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?12)
+          `INSERT INTO subscriptions (endpoint, p256dh, auth, lat, lon, tz, method, asr, lang, notify_start, notify_reminder,
+             notify_adhkar, notify_friday, adjust, last_sent_at, updated_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?13, ?14, ?15, ?12, ?12)
            ON CONFLICT(endpoint) DO UPDATE SET p256dh=?2, auth=?3, lat=?4, lon=?5, tz=?6, method=?7, asr=?8, lang=?9,
-             notify_start=?10, notify_reminder=?11, updated_at=?12`,
-        ).bind(r.endpoint, r.p256dh, r.auth, r.lat, r.lon, r.tz, r.method, r.asr, r.lang, r.notify_start, r.notify_reminder, now).run()
+             notify_start=?10, notify_reminder=?11, notify_adhkar=?13, notify_friday=?14, adjust=?15, updated_at=?12`,
+        ).bind(r.endpoint, r.p256dh, r.auth, r.lat, r.lon, r.tz, r.method, r.asr, r.lang, r.notify_start, r.notify_reminder, now,
+          r.notify_adhkar, r.notify_friday, r.adjust).run()
         return json({ ok: true })
       },
       DELETE: async ({ request }) => {

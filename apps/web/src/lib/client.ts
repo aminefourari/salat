@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { detectLang } from './i18n'
 import { countryAt } from './methods'
-import { computeDay, dateIn, nextDate, usesHabous, type DayTimes, type Settings } from './prayer'
+import { adjustDay, computeDay, dateIn, nextDate, usesHabous, type DayTimes, type Settings } from './prayer'
 
 export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null }
-export type Notify = { start: boolean; reminder: boolean }
+export type Notify = { start: boolean; reminder: boolean; adhkar: boolean; friday: boolean }
 
 const KEYS = { settings: 'salat.settings', loc: 'salat.loc', notify: 'salat.notify' } as const
 const listeners = new Set<() => void>()
@@ -35,7 +35,7 @@ const defaultSettings = (): Settings =>
   typeof navigator === 'undefined' ? DEFAULT_SETTINGS : { ...DEFAULT_SETTINGS, lang: detectLang(navigator.language) }
 let initialSettings: Settings | undefined
 export const useSettings = () => useStored<Settings>(KEYS.settings, (initialSettings ??= defaultSettings()), DEFAULT_SETTINGS)
-const NO_NOTIFY: Notify = { start: true, reminder: true }
+const NO_NOTIFY: Notify = { start: true, reminder: true, adhkar: false, friday: false }
 export const useNotify = () => useStored<Notify>(KEYS.notify, NO_NOTIFY, NO_NOTIFY)
 
 const NO_LOC = null as Loc | null
@@ -118,6 +118,7 @@ async function post(sub: PushSubscription) {
     body: JSON.stringify({
       subscription: sub.toJSON(), lat: loc.lat, lon: loc.lon, tz: tz(),
       settings: read(KEYS.settings, defaultSettings()), notifyStart: notify.start, notifyReminder: notify.reminder,
+      notifyAdhkar: notify.adhkar, notifyFriday: notify.friday,
     }),
   })
   if (!res.ok) throw new Error(`subscribe failed: ${res.status}`)
@@ -199,12 +200,26 @@ export function useDays(loc: Loc | null, s: Settings, now: Date): { today: DayTi
     if (!loc) return null
     const tomorrowDate = nextDate(date)
     const official = !!habous?.[date]
-    return {
-      today: official ? toDay(habous![date]) : computeDay(loc.lat, loc.lon, date, zone, s),
-      tomorrow: habous?.[tomorrowDate] ? toDay(habous[tomorrowDate]) : computeDay(loc.lat, loc.lon, tomorrowDate, zone, s),
-      date, official,
-    }
+    return { today: dayFor(loc, s, date, habous), tomorrow: dayFor(loc, s, tomorrowDate, habous), date, official }
   }, [loc, s, date, zone, habous])
+}
+
+/** One day's times: official Habous when known, calculated otherwise, then the user's minute offsets. */
+export const dayFor = (loc: Loc, s: Settings, date: string, habous: Habous['days'] | null) =>
+  adjustDay(habous?.[date] ? toDay(habous[date]) : computeDay(loc.lat, loc.lon, date, tz(), s), s.adjust)
+
+/** Every day of `month` (YYYY-MM) for the monthly timetable. Habous days are those the device has fetched. */
+export function useMonth(loc: Loc | null, s: Settings, month: string, now: Date) {
+  const habous = useHabous(loc, s, dateIn(now, tz()))
+  return useMemo(() => {
+    if (!loc) return null
+    const [y, m] = month.split('-').map(Number)
+    const n = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    return Array.from({ length: n }, (_, i) => {
+      const date = `${month}-${String(i + 1).padStart(2, '0')}`
+      return { date, day: dayFor(loc, s, date, habous), official: !!habous?.[date] }
+    })
+  }, [loc, s, month, habous])
 }
 
 export async function testPush() {

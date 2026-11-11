@@ -41,6 +41,11 @@ function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
   return (
     <>
       <h1>{t(lang, 'quran')}</h1>
+      {prefs.ayah > 1 && (
+        <Link to="/quran" search={{ s: prefs.surah }} className="btn btn-solid continue">
+          {t(lang, 'continueReading', { surah: lang === 'ar' ? surahs[prefs.surah - 1].ar : surahs[prefs.surah - 1].en, ayah: num(prefs.ayah, lang) })}
+        </Link>
+      )}
       <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'search')} aria-label={t(lang, 'search')} />
       <ul className="list">
         {shown.map(x => (

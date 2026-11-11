@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdhkarRouteImport } from './routes/adhkar'
+import { Route as MonthRouteImport } from './routes/month'
 import { Route as QiblaRouteImport } from './routes/qibla'
 import { Route as QuranRouteImport } from './routes/quran'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -27,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdhkarRoute = AdhkarRouteImport.update({
   id: '/adhkar',
   path: '/adhkar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonthRoute = MonthRouteImport.update({
+  id: '/month',
+  path: '/month',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QiblaRoute = QiblaRouteImport.update({
@@ -68,6 +74,7 @@ const ApiTestPushRoute = ApiTestPushRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adhkar': typeof AdhkarRoute
+  '/month': typeof MonthRoute
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adhkar': typeof AdhkarRoute
+  '/month': typeof MonthRoute
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/adhkar': typeof AdhkarRoute
+  '/month': typeof MonthRoute
   '/qibla': typeof QiblaRoute
   '/quran': typeof QuranRoute
   '/settings': typeof SettingsRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/adhkar'
+    | '/month'
     | '/qibla'
     | '/quran'
     | '/settings'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/adhkar'
+    | '/month'
     | '/qibla'
     | '/quran'
     | '/settings'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/adhkar'
+    | '/month'
     | '/qibla'
     | '/quran'
     | '/settings'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdhkarRoute: typeof AdhkarRoute
+  MonthRoute: typeof MonthRoute
   QiblaRoute: typeof QiblaRoute
   QuranRoute: typeof QuranRoute
   SettingsRoute: typeof SettingsRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/adhkar'
       fullPath: '/adhkar'
       preLoaderRoute: typeof AdhkarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/month': {
+      id: '/month'
+      path: '/month'
+      fullPath: '/month'
+      preLoaderRoute: typeof MonthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/qibla': {
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdhkarRoute: AdhkarRoute,
+  MonthRoute: MonthRoute,
   QiblaRoute: QiblaRoute,
   QuranRoute: QuranRoute,
   SettingsRoute: SettingsRoute,

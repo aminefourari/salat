@@ -246,3 +246,32 @@ select {
   background: linear-gradient(180deg, #f1da8e, var(--gold)); color: var(--royal-deep); font-weight: 600;
   border-radius: 999px; padding: .1rem .6rem; font-size: .85rem; font-variant-numeric: tabular-nums;
 }
+
+/* ---- reminders, Ramadan, monthly timetable ---- */
+.month-link { color: var(--gold); vertical-align: -.12em; margin-inline-start: .25rem; display: inline-flex; padding: .15rem; }
+.ramadan { color: var(--gold); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.adjust { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
+.adjust .field { padding: 0; border: 0; font-size: .8rem; color: var(--soft); text-align: center; }
+.adjust input, .month-nav select {
+  width: 100%; padding: .45rem .3rem; border-radius: .7rem; border: 1px solid var(--line); text-align: center;
+  background: color-mix(in srgb, var(--royal-deep) 80%, transparent); color: var(--ink); font: inherit;
+}
+.continue { display: block; margin: 0 0 .9rem; }
+.month-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: 0 0 .75rem; }
+.month-nav h1 { margin: 0; font-size: 1.3rem; text-align: center; flex: 1; }
+.month-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .85rem; }
+.month-table th, .month-table td { padding: .35rem .2rem; text-align: center; }
+.month-table th { color: var(--soft); font-weight: 500; font-size: .75rem; }
+.month-table td:first-child { text-align: start; white-space: nowrap; }
+.month-table tbody tr:nth-child(odd) { background: var(--panel); }
+.month-table tr.is-today { outline: 1px solid var(--gold); outline-offset: -1px; }
+.month-table tr.is-friday td:first-child { color: var(--gold); }
+@media print {
+  .topbar, .tabs, .no-print { display: none !important; }
+  html, body { background: #fff !important; color: #000 !important; }
+  .app { max-width: none; padding: 0; }
+  .month-table { font-size: 10pt; }
+  .month-table th, .month-table td { color: #000 !important; border-bottom: 1px solid #ccc; padding: 2pt; }
+  .month-table tbody tr:nth-child(odd) { background: none; }
+  .month-table tr.is-today { outline: none; }
+}
