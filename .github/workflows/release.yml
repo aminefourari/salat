@@ -39,6 +39,6 @@ jobs:
           open **System Settings → Privacy & Security** and click **Open Anyway**, or run
           `xattr -dr com.apple.quarantine /Applications/Salat.app` in Terminal.
 
-          Requires macOS 15 or later.
+          Requires macOS 15 or later. Already installed? Salat offers this update itself (Settings → General → Updates).
           MD
           gh release create "$GITHUB_REF_NAME" "Salat-${GITHUB_REF_NAME}.zip" --title "Salat $GITHUB_REF_NAME" --notes-file notes.md
