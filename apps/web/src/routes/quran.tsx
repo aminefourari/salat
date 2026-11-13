@@ -6,7 +6,7 @@ import { useLazy, useReadPrefs, useSettings } from '../lib/client'
 import { fetchJson, memoLoad } from '../lib/load'
 import { t } from '../lib/i18n'
 import type { Lang } from '../lib/prayer'
-import { arabicDigits, ayahIndex, hizbStarts, parseRecitation, RECITERS, recitationApi, rubInfo, TAFSIRS, tafsirApi, tafsirText, type Recitation, type Surah } from '../lib/quran'
+import { arabicDigits, ayahIndex, hizbStarts, isBookmarked, parseRecitation, RECITERS, recitationApi, rubInfo, TAFSIRS, tafsirApi, tafsirText, toggleBookmark, type Bookmark, type Recitation, type Surah } from '../lib/quran'
 
 export const Route = createFileRoute('/quran')({
   validateSearch: (q: Record<string, unknown>): { s?: number; a?: number } => {
@@ -34,7 +34,7 @@ function QuranPage() {
 
 function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
   const [q, setQ] = useState('')
-  const [byHizb, setByHizb] = useState(false)
+  const [mode, setMode] = useState<'surahs' | 'hizbs' | 'bookmarks'>('surahs')
   const [prefs] = useReadPrefs()
   const shown = useMemo(() => {
     const k = latinDigits(q.trim().toLowerCase())
@@ -49,10 +49,11 @@ function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
         </Link>
       )}
       <div className="seg" role="group">
-        <button type="button" aria-pressed={!byHizb} onClick={() => setByHizb(false)}>{t(lang, 'surahs')}</button>
-        <button type="button" aria-pressed={byHizb} onClick={() => setByHizb(true)}>{t(lang, 'hizbs')}</button>
+        <button type="button" aria-pressed={mode === 'surahs'} onClick={() => setMode('surahs')}>{t(lang, 'surahs')}</button>
+        <button type="button" aria-pressed={mode === 'hizbs'} onClick={() => setMode('hizbs')}>{t(lang, 'hizbs')}</button>
+        <button type="button" aria-pressed={mode === 'bookmarks'} onClick={() => setMode('bookmarks')}>{t(lang, 'bookmarks')}</button>
       </div>
-      {byHizb ? <HizbList surahs={surahs} lang={lang} /> : <>
+      {mode === 'hizbs' ? <HizbList surahs={surahs} lang={lang} /> : mode === 'bookmarks' ? <BookmarkList surahs={surahs} lang={lang} list={prefs.bookmarks} /> : <>
       <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'search')} aria-label={t(lang, 'search')} />
       <ul className="list">
         {shown.map(x => (
@@ -87,6 +88,29 @@ function HizbList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
                 <span className="list-sub">{t(lang, 'juzN', { n: num(h.juz, lang) })} · {lang === 'ar' ? s.ar : s.en} {num(h.ayah, lang)}</span>
               </span>
               <span className="list-ar" lang="ar">{s.ayahs[h.ayah - 1].replace(/^۞\s*/, '').split(' ').slice(0, 3).join(' ')}</span>
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function BookmarkList({ surahs, lang, list }: { surahs: Surah[]; lang: Lang; list: Bookmark[] }) {
+  if (!list.length) return <p className="meta">{t(lang, 'noBookmarks')}</p>
+  return (
+    <ul className="list">
+      {list.map(b => {
+        const s = surahs[b.surah - 1]
+        return (
+          <li key={`${b.surah}:${b.ayah}`}>
+            <Link to="/quran" search={b.ayah > 1 ? { s: b.surah, a: b.ayah } : { s: b.surah }} className="list-row">
+              <span className="star-num" aria-hidden="true">★</span>
+              <span className="list-main">
+                <span className="list-title">{lang === 'ar' ? s.ar : s.en} {num(b.ayah, lang)}</span>
+                <span className="list-sub">{new Date(b.at).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </span>
+              <span className="list-ar" lang="ar">{s.ayahs[b.ayah - 1].replace(/^۞\s*/, '').split(' ').slice(0, 3).join(' ')}</span>
             </Link>
           </li>
         )
@@ -240,7 +264,15 @@ function Reader({ surah, startAyah, lang }: { surah: Surah; startAyah?: number; 
               <button type="button" onClick={() => playFrom(i + 1)}>
                 {text} <span className="ayah-no">﴿{arabicDigits(i + 1)}﴾</span>
               </button>
-              <Tafsir surah={surah.n} ayah={i + 1} lang={lang} />
+              <div className="ayah-tools" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                <button type="button" className="bookmark" aria-pressed={isBookmarked(prefs.bookmarks, surah.n, i + 1)}
+                  aria-label={t(lang, isBookmarked(prefs.bookmarks, surah.n, i + 1) ? 'removeBookmark' : 'bookmark')}
+                  title={t(lang, isBookmarked(prefs.bookmarks, surah.n, i + 1) ? 'removeBookmark' : 'bookmark')}
+                  onClick={() => setPrefs({ ...prefs, bookmarks: toggleBookmark(prefs.bookmarks, surah.n, i + 1, Date.now()) })}>
+                  {isBookmarked(prefs.bookmarks, surah.n, i + 1) ? '★' : '☆'}
+                </button>
+                <Tafsir surah={surah.n} ayah={i + 1} lang={lang} />
+              </div>
             </div>
           )
         })}

@@ -139,9 +139,9 @@ Swift strings catalog); they don't need to be shared at build time.
 ## Non-goals
 
 - No iPhone/iPad app, no App Store, no signing or notarization (for now).
-- No translations or tafsir of the Quran; Arabic text only.
+- No translations or tafsir of the Quran; Arabic text only. (Tafsir: superseded, shipped later, see CLAUDE.md)
 - No accounts, sync, or connection to the website's push notifications or D1.
-- No official Habous timetable download (the website doesn't have it either).
+- No official Habous timetable download (the website doesn't have it either). (superseded: shipped later, see CLAUDE.md)
 - No search, bookmarks or memorization tools in the Quran (not requested; can come later).
 
 ## Anti-goals (a failure even if it "works")

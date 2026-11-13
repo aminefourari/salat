@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { computeDay, dateIn, type Settings } from '../src/lib/prayer'
+import { computeDay, dateIn, type Resolved } from '../src/lib/prayer'
 import { dayEvents, dueEvents, type Sub } from '../src/lib/schedule'
 
-const settings: Settings = { method: 'aachen', asr: 'standard', lang: 'en' }
+const settings: Resolved = { method: 'aachen', asr: 'standard', lang: 'en' }
 const sub = (o: Partial<Sub> = {}): Sub => ({
-  lat: 53.4319, lon: 11.1903, tz: 'Europe/Berlin', settings,
+  lat: 53.4319, lon: 11.1903, tz: 'Europe/Berlin', settings, country: 'DE',
   notifyStart: true, notifyReminder: true, lastSentAt: 0, ...o,
 })
 const MIN = 60_000
@@ -65,6 +65,14 @@ describe('adjustments and extra reminders', () => {
     const s = sub({ settings: { ...settings, adjust: { isha: 3 } }, lastSentAt: adjusted.getTime() - MIN })
     expect(dueEvents(s, adjusted).map(e => [e.kind, e.prayerTime.getTime()])).toEqual([['start', adjusted.getTime()]])
     expect(dueEvents({ ...s, lastSentAt: isha.getTime() - MIN }, isha)).toEqual([])
+  })
+
+  it('per-prayer switches drop that prayer\'s start and reminder only', () => {
+    const day = computeDay(53.4319, 11.1903, '2026-11-13', 'Europe/Berlin', settings)
+    const ev = dayEvents({ notifyStart: true, notifyReminder: true, notifyFriday: true, notifyPrayers: 31 & ~1 & ~16 }, '2026-11-13', day)
+    expect([...new Set(ev.filter(e => e.kind === 'start').map(e => e.prayer))]).toEqual(['dhuhr', 'asr', 'maghrib'])
+    expect(ev.some(e => e.kind === 'jumuah')).toBe(true) // Friday reminders aren't per-prayer (as on the Mac)
+    expect(dayEvents({ notifyStart: true, notifyReminder: false }, '2026-11-13', day).length).toBe(5) // unset = all
   })
 
   it('morning adhkar 20 min after Fajr, evening adhkar 20 min after Asr, only when on', () => {

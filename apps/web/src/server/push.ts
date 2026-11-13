@@ -1,7 +1,11 @@
 import { buildPushHTTPRequest } from '@pushforge/builder'
 import type { Payload, Row, SendResult } from './cron'
+import { validKeys } from './subscribe'
 
 export async function sendPush(env: Env, row: Pick<Row, 'endpoint' | 'p256dh' | 'auth'>, payload: Payload): Promise<SendResult> {
+  // A row with malformed keys can never be delivered: report it gone so the caller deletes it. (Other build errors,
+  // e.g. a misconfigured VAPID key, still throw: treating those as gone would delete every subscription.)
+  if (!validKeys(row.p256dh, row.auth)) return 'gone'
   const { endpoint, headers, body } = await buildPushHTTPRequest({
     privateJWK: env.VAPID_PRIVATE_KEY,
     subscription: { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },

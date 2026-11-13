@@ -86,4 +86,16 @@ final class LiveDownloadTests: XCTestCase {
         XCTAssertEqual(l.timings.count, 7)
         XCTAssertGreaterThan(s.size(reciter: 7), 500_000)
     }
+
+    func testBookmarks() {
+        let t0 = Date(timeIntervalSince1970: 0)
+        var list = toggleBookmark([], surah: 2, ayah: 255, now: t0)
+        list = toggleBookmark(list, surah: 18, ayah: 1, now: t0 + 1)
+        XCTAssertEqual(list.map { [$0.surah, $0.ayah] }, [[18, 1], [2, 255]])
+        list = toggleBookmark(list, surah: 2, ayah: 255, now: t0 + 2)
+        XCTAssertFalse(isBookmarked(list, surah: 2, ayah: 255))
+        for i in 1...30 { list = toggleBookmark(list, surah: 3, ayah: i, now: t0 + Double(10 + i)) }
+        XCTAssertEqual(list.count, maxBookmarks)
+        XCTAssertEqual(list.first, Bookmark(surah: 3, ayah: 30, at: t0 + 40))
+    }
 }

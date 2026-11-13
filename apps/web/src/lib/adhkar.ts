@@ -7,8 +7,14 @@ export type Dhikr = {
 }
 export type Chapter = { id: number; ar: string; en: string; fr: string | null; items: Dhikr[] }
 
-/** Translation in the UI language; none in Arabic. */
-export const translation = (d: Dhikr, lang: Lang) => (lang === 'en' ? d.en : lang === 'fr' ? d.fr : null)
+/** Language of the translation shown in `lang`: French has its own, the other languages read the English one. */
+export const translationLang = (lang: Lang): 'en' | 'fr' | null => (lang === 'ar' ? null : lang === 'fr' ? 'fr' : 'en')
+
+/** Translation shown in the UI language; none in Arabic (Hisn al-Muslim is translated into English and French only). */
+export const translation = (d: Dhikr, lang: Lang) => {
+  const l = translationLang(lang)
+  return l === 'fr' ? d.fr : l === 'en' ? d.en : null
+}
 
 /** "×N" only when the Arabic doesn't already state the count. */
 export const badge = (d: Dhikr) => (d.repeat > 1 && !d.count_in_text ? d.repeat : null)

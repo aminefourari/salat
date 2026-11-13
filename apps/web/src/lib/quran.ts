@@ -1,4 +1,5 @@
 // Quran reader logic shared by the /quran route (pure; mirrors apps/macos/Salat/Quran/Recitations.swift).
+import type { Lang } from './prayer'
 
 /** `rub`: [ayah, rubʿ number] where one of the 240 quarters (rubʿ al-hizb) starts in this surah. */
 export type Surah = { n: number; ar: string; en: string; ayahs: string[]; rub: [number, number][] }
@@ -52,11 +53,21 @@ export const rubInfo = (rub: number) => ({ juz: Math.ceil(rub / 8), hizb: Math.c
 export const hizbStarts = (surahs: Surah[]) =>
   surahs.flatMap(s => s.rub.filter(([, r]) => r % 4 === 1).map(([ayah, r]) => ({ ...rubInfo(r), surah: s.n, ayah })))
 
+/** A saved ayah (newest first in the list); per device, like the reading position (mirrors Swift `Bookmark`). */
+export type Bookmark = { surah: number; ayah: number; at: number }
+export const MAX_BOOKMARKS = 20
+export const isBookmarked = (list: Bookmark[], surah: number, ayah: number) => list.some(b => b.surah === surah && b.ayah === ayah)
+/** Adds the ayah at the top (keeping the newest MAX_BOOKMARKS), or removes it when it's already saved. */
+export function toggleBookmark(list: Bookmark[], surah: number, ayah: number, now: number): Bookmark[] {
+  if (isBookmarked(list, surah, ayah)) return list.filter(b => !(b.surah === surah && b.ayah === ayah))
+  return [{ surah, ayah, at: now }, ...list].slice(0, MAX_BOOKMARKS)
+}
+
 /** quran.com tafsirs by UI language: Tafsir al-Muyassar (16), plus Ibn Kathir abridged (169) in English. */
-export const TAFSIRS: Record<'ar' | 'en' | 'fr', { id: number; name: string }[]> = {
-  ar: [{ id: 16, name: 'التفسير الميسر' }],
-  fr: [{ id: 16, name: 'التفسير الميسر' }],
-  en: [{ id: 169, name: 'Ibn Kathir (abridged)' }, { id: 16, name: 'التفسير الميسر' }],
+const MUYASSAR = { id: 16, name: 'التفسير الميسر' }
+export const TAFSIRS: Record<Lang, { id: number; name: string }[]> = {
+  ar: [MUYASSAR], fr: [MUYASSAR], de: [MUYASSAR], nl: [MUYASSAR], es: [MUYASSAR], pt: [MUYASSAR], it: [MUYASSAR],
+  en: [{ id: 169, name: 'Ibn Kathir (abridged)' }, MUYASSAR],
 }
 export const tafsirApi = (id: number, surah: number, ayah: number) =>
   `https://api.quran.com/api/v4/tafsirs/${id}/by_ayah/${surah}:${ayah}`

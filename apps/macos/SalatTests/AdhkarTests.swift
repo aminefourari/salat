@@ -89,4 +89,13 @@ final class LoginItemTests: XCTestCase {
         XCTAssertFalse(loginItemNeedsRefresh(registeredPath: "/a", currentPath: "/a", enabled: true))
         XCTAssertFalse(loginItemNeedsRefresh(registeredPath: nil, currentPath: "/b", enabled: false))
     }
+
+    func testEveryLanguageIsComplete() {
+        for l in Lang.allCases { XCTAssertEqual(missingKeys(l), [], "\(l)") }
+        for l in Lang.allCases { XCTAssertFalse(methodName(.aachen, l).isEmpty) }
+        let d = AdhkarText.chapters[0].items[0]
+        XCTAssertEqual(d.translation(.de), d.en)
+        XCTAssertEqual(d.translation(.fr), d.fr)
+        XCTAssertNil(d.translation(.ar))
+    }
 }

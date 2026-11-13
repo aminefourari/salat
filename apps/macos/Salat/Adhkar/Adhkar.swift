@@ -13,8 +13,9 @@ struct Dhikr: Codable, Identifiable, Sendable {
 
     enum CodingKeys: String, CodingKey { case id, ar, en, fr, ref, `repeat`, countInText = "count_in_text", audio }
 
-    /// Translation in the UI language; none in Arabic.
-    func translation(_ l: Lang) -> String? { l == .en ? en : l == .fr ? fr : nil }
+    /// Translation in the UI language; none in Arabic. Hisn al-Muslim is translated into English and French only,
+    /// so the other languages read the English one (same as the website).
+    func translation(_ l: Lang) -> String? { l == .ar ? nil : l == .fr ? fr : en }
 
     /// "×N" only when the Arabic doesn't already state the count (the text wins over the feed's REPEAT field).
     var badge: Int? { `repeat` > 1 && !countInText ? `repeat` : nil }

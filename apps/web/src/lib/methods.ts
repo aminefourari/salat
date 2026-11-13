@@ -1,5 +1,3 @@
-import { iso1A2Code } from '@rapideditor/country-coder'
-
 export type MethodId =
   | 'aachen' | 'morocco' | 'mwl' | 'ummalqura' | 'uoif' | 'isna' | 'egyptian'
   | 'karachi' | 'dubai' | 'kuwait' | 'qatar' | 'singapore' | 'turkey' | 'tehran'
@@ -18,4 +16,3 @@ const BY_COUNTRY: Record<string, MethodId> = {
 
 export const methodForCountry = (iso2: string | null): MethodId => (iso2 && BY_COUNTRY[iso2]) || 'mwl'
 
-export const countryAt = (lat: number, lon: number): string | null => iso1A2Code([lon, lat]) ?? null

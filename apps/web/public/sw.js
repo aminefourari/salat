@@ -1,15 +1,29 @@
 // Salat service worker: offline app shell + push notifications.
-const CACHE = 'salat-v9'
-const SHELL = ['/', '/quran', '/adhkar', '/qibla', '/settings', '/month', '/manifest.webmanifest', '/icon-192.png']
+// One cache per deploy: the page registers /sw.js?v=<build id>, so each deploy installs a fresh worker.
+const CACHE = `salat-${new URL(location.href).searchParams.get('v') || 'dev'}`
+const PAGES = ['/', '/quran', '/adhkar', '/qibla', '/settings', '/month']
+const SHELL = [...PAGES, '/manifest.webmanifest', '/icon-192.png']
+// Absolute (/assets/x.js in HTML and CSS) or relative (./x.js between chunks, which all live in /assets/).
+const ASSET = /(?:\/assets\/|\.\/)([\w.-]+\.(?:json|js|css|woff2))(?![\w.-])/g
 
-// Precache the shell pages plus the hashed JS/CSS they reference, so the first offline launch works.
+/** Hashed asset paths referenced by a page, script or stylesheet, as /assets/… paths. */
+function assetRefs(text) { return [...new Set([...text.matchAll(ASSET)].map(m => `/assets/${m[1]}`))] }
+
+// Precache the shell, then everything it references, transitively (route chunks, Quran/adhkar JSON, fonts).
+// Hashed files never change, so one already in an older cache is copied instead of downloaded again.
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE)
     await c.addAll(SHELL)
-    const pages = await Promise.all(['/', '/quran', '/adhkar', '/qibla', '/settings', '/month'].map(async p => (await c.match(p)).text()))
-    const assets = [...new Set(pages.join('').match(/\/assets\/[\w.-]+\.(?:js|css|woff2?)/g) || [])]
-    await c.addAll(assets)
+    const todo = assetRefs((await Promise.all(PAGES.map(async p => (await c.match(p)).text()))).join(''))
+    const seen = new Set(todo)
+    while (todo.length) {
+      const path = todo.pop()
+      const res = (await caches.match(path)) || (await fetch(path))
+      if (!res.ok) continue
+      await c.put(path, res.clone())
+      if (/\.(?:js|css)$/.test(path)) for (const ref of assetRefs(await res.text())) if (!seen.has(ref)) { seen.add(ref); todo.push(ref) }
+    }
     await self.skipWaiting()
   })())
 })
@@ -33,7 +47,9 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(request)
       .then(res => save(request, res))
-      .catch(() => caches.match(request).then(r => r || (request.mode === 'navigate' ? caches.match('/') : Response.error()))),
+      // A notification opens /adhkar?c=27 or /quran?s=18: offline, serve that page whatever its query.
+      .catch(() => caches.match(request, { ignoreSearch: request.mode === 'navigate' })
+        .then(r => r || (request.mode === 'navigate' ? caches.match('/') : Response.error()))),
   )
 })
 
@@ -63,4 +79,18 @@ self.addEventListener('notificationclick', e => {
       return open.focus().then(c => target && c.navigate(target)).catch(() => self.clients.openWindow(target ?? '/'))
     }),
   )
+})
+
+// The browser rotated or expired this device's push subscription: subscribe again and move the server row
+// (location and settings live only in the page's storage, so the row is moved rather than re-created).
+// Same public key as src/lib/config.ts: update both if the VAPID pair ever changes.
+const VAPID_PUBLIC_KEY = 'BIjHbRVBp2kI6TBpgMgz2WAM-6Pkn_x-sgPQFyHB4UeS4qTPv3HoC7iJ9blzaRehHKq9CiJPdMKoqUwjg0dN2y8'
+const b64ToBytes = b64 => Uint8Array.from(atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+self.addEventListener('pushsubscriptionchange', e => {
+  e.waitUntil((async () => {
+    const old = e.oldSubscription
+    if (!old) return // nothing to move: the next app open re-syncs
+    const sub = e.newSubscription || await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUBLIC_KEY) })
+    await fetch('/api/subscribe', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ oldEndpoint: old.endpoint, subscription: sub.toJSON() }) })
+  })())
 })

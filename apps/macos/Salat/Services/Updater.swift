@@ -26,9 +26,11 @@ final class Updater {
         self.settings = settings
         guard Snapshots.dir == nil else { return }
         // Daily, plus a first check shortly after launch (let location and alerts settle first).
-        timer = Timer.scheduledTimer(withTimeInterval: 24 * 3600, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: 24 * 3600, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.autoCheck() }
         }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
         Task { try? await Task.sleep(for: .seconds(10)); autoCheck() }
     }
 
@@ -51,29 +53,37 @@ final class Updater {
 
     func install() {
         guard case .available(let info) = state else { return }
+        state = .downloading(info, 0) // synchronously, so a second click finds no .available
         Task { await install(info) }
     }
 
     private func install(_ info: UpdateInfo) async {
-        state = .downloading(info, 0)
         do {
             let app = Bundle.main.bundleURL
             guard FileManager.default.isWritableFile(atPath: app.deletingLastPathComponent().path) else { throw UpdateError.notWritable }
             let work = FileManager.default.temporaryDirectory.appendingPathComponent("salat-update-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
-            let zip = try await download(info, to: work.appendingPathComponent("Salat.zip"))
-            // Integrity: the digest GitHub computed for the release asset.
-            let digest = SHA256.hash(data: try Data(contentsOf: zip, options: .mappedIfSafe)).map { String(format: "%02x", $0) }.joined()
+            var handedOff = false // once the swap script runs, it owns `work`
+            defer { if !handedOff { try? FileManager.default.removeItem(at: work) } }
+            let zip = work.appendingPathComponent("Salat.zip")
+            try await URLSession.shared.downloadAtomically(info.downloadURL, to: zip) { p in
+                Task { @MainActor [weak self] in if case .downloading = self?.state { self?.state = .downloading(info, p) } }
+            }
+            // Integrity: the digest GitHub computed for the release asset (hashed off the main actor).
+            let digest = try await Task.detached {
+                SHA256.hash(data: try Data(contentsOf: zip, options: .mappedIfSafe)).map { String(format: "%02x", $0) }.joined()
+            }.value
             guard digest == info.sha256.lowercased() else { throw UpdateError.checksum }
             state = .installing
-            try run("/usr/bin/ditto", ["-x", "-k", zip.path, work.path])
+            try await run("/usr/bin/ditto", ["-x", "-k", zip.path, work.path])
             let new = work.appendingPathComponent("Salat.app")
             // The new app must be intact (signature seals every file) and really be this app at that version.
-            try run("/usr/bin/codesign", ["--verify", "--deep", "--strict", new.path])
+            try await run("/usr/bin/codesign", ["--verify", "--deep", "--strict", new.path])
             let plist = Bundle(url: new)?.infoDictionary
             guard plist?["CFBundleIdentifier"] as? String == Bundle.main.bundleIdentifier,
                   plist?["CFBundleShortVersionString"] as? String == info.version else { throw UpdateError.wrongApp }
             try swapAndRelaunch(old: app, new: new, work: work)
+            handedOff = true
             NSApp.terminate(nil)
         } catch {
             state = .failed((error as? UpdateError).map { t($0.key, settings.d.lang) }
@@ -81,44 +91,25 @@ final class Updater {
         }
     }
 
-    private func download(_ info: UpdateInfo, to dest: URL) async throws -> URL {
-        let (bytes, res) = try await URLSession.shared.bytes(from: info.downloadURL)
-        guard (res as? HTTPURLResponse)?.statusCode == 200 else { throw UpdateError.server }
-        let total = max(Int(res.expectedContentLength), info.size, 1)
-        var data = Data(); data.reserveCapacity(total)
-        var buf = [UInt8](); buf.reserveCapacity(1 << 16)
-        for try await b in bytes {
-            buf.append(b)
-            if buf.count == 1 << 16 { data.append(contentsOf: buf); buf.removeAll(keepingCapacity: true); state = .downloading(info, Double(data.count) / Double(total)) }
-        }
-        data.append(contentsOf: buf)
-        try data.write(to: dest)
-        return dest
-    }
-
     /// A detached shell waits for this process to quit, swaps the bundles (restoring the old one if the move
     /// fails), clears quarantine and opens the new app. The login item points at the same path, so it keeps working.
     private func swapAndRelaunch(old: URL, new: URL, work: URL) throws {
-        let script = """
-        while kill -0 "$1" 2>/dev/null; do sleep 0.2; done
-        mv "$2" "$4/old.app" || exit 1
-        if mv "$3" "$2"; then rm -rf "$4"; else mv "$4/old.app" "$2"; fi
-        xattr -dr com.apple.quarantine "$2" 2>/dev/null
-        open "$2"
-        """
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/bin/sh")
-        p.arguments = ["-c", script, "salat-update", String(ProcessInfo.processInfo.processIdentifier), old.path, new.path, work.path]
+        p.arguments = ["-c", updateSwapScript, "salat-update", String(ProcessInfo.processInfo.processIdentifier), old.path, new.path, work.path, "/usr/bin/open"]
         try p.run()
     }
 
-    private func run(_ tool: String, _ args: [String]) throws {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: tool)
-        p.arguments = args
-        try p.run()
-        p.waitUntilExit()
-        guard p.terminationStatus == 0 else { throw UpdateError.wrongApp }
+    /// Runs a tool to completion off the main actor (ditto/codesign take seconds).
+    private nonisolated func run(_ tool: String, _ args: [String]) async throws {
+        try await Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: tool)
+            p.arguments = args
+            try p.run()
+            p.waitUntilExit()
+            guard p.terminationStatus == 0 else { throw UpdateError.wrongApp }
+        }.value
     }
 }
 

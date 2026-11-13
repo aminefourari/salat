@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// An adhan recording: bundled (free licenses), downloaded on first use (Internet Archive, not redistributed by us),
@@ -38,6 +39,11 @@ struct AdhanVoice: Identifiable, Sendable {
     static func find(_ id: String) -> AdhanVoice? { all.first { $0.id == id } }
 }
 
+enum AdhanStoreError: LocalizedError {
+    case unplayable
+    var errorDescription: String? { "This audio file can't be played." }
+}
+
 /// Where adhan audio lives: bundled files, then `{root}/{id}.mp3` (downloaded) or `{root}/custom-….{ext}` (user's own).
 final class AdhanStore: Sendable {
     static let shared = AdhanStore(root: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -72,8 +78,22 @@ final class AdhanStore: Sendable {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let name = src.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "~", with: "-")
         let id = "custom-\(UUID().uuidString.prefix(8))~\(name)"
-        try FileManager.default.copyItem(at: src, to: root.appendingPathComponent(id).appendingPathExtension(src.pathExtension.lowercased()))
+        let dest = root.appendingPathComponent(id).appendingPathExtension(src.pathExtension.lowercased())
+        try FileManager.default.copyItem(at: src, to: dest)
+        // Refuse what can't be played now, rather than beep at prayer time.
+        guard (try? AVAudioPlayer(contentsOf: dest)) != nil else { try? FileManager.default.removeItem(at: dest); throw AdhanStoreError.unplayable }
         return id
+    }
+
+    /// A file for `id` that really decodes, else the bundled Hassan II adhan. A downloaded file that doesn't decode
+    /// (e.g. an HTML error page saved as .mp3) is deleted so the next play downloads it again.
+    func playable(_ id: String) -> URL? {
+        if let url = local(id) {
+            if (try? AVAudioPlayer(contentsOf: url)) != nil { return url }
+            let bundled = Bundle(for: AdhanStore.self).url(forResource: id, withExtension: "m4a") != nil
+            if !bundled, !id.hasPrefix("custom-") { try? FileManager.default.removeItem(at: url) }
+        }
+        return local("hassan2")
     }
 
     func customIds() -> [String] {

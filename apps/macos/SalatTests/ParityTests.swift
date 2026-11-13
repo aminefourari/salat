@@ -8,7 +8,10 @@ final class ParityTests: XCTestCase {
             let times: [String: Int] // unix minutes
         }
         struct CountryCase: Decodable { let lat, lon: Double; let cc: String? }
-        let prayer: [PrayerCase]; let country: [CountryCase]
+        struct EventCase: Decodable { let kind, prayer: String; let at: Int }
+        struct ScheduleCase: Decodable { let lat, lon: Double; let date: String; let method: MethodId; let asr: AsrSchool; let adjust: [String: Int]; let events: [EventCase] }
+        struct HijriCase: Decodable { let ms: Double; let month: Int }
+        let prayer: [PrayerCase]; let country: [CountryCase]; let schedule: [ScheduleCase]; let hijri: [HijriCase]
     }
 
     static let fixture: Fixture = {
@@ -31,6 +34,30 @@ final class ParityTests: XCTestCase {
             }
         }
         XCTAssertGreaterThan(Self.fixture.prayer.count, 800)
+    }
+
+    /// Reminder kinds, their offsets and the user's minute adjustments agree with the website's push schedule.
+    func testScheduleParity() {
+        let modes = Dictionary(uniqueKeysWithValues: Prayer.allCases.map { ($0, AlertMode.adhan) })
+        for c in Self.fixture.schedule {
+            let p = c.date.split(separator: "-").map { Int($0)! }
+            guard let raw = computeDay(lat: c.lat, lon: c.lon, date: DateComponents(year: p[0], month: p[1], day: p[2]), method: c.method, asr: c.asr)
+            else { XCTFail("nil for \(c.date)"); continue }
+            let adjust = Dictionary(uniqueKeysWithValues: c.adjust.map { (Prayer(rawValue: $0.key)!, $0.value) })
+            let got = upcomingEvents(days: [adjustDay(raw, adjust)], modes: modes, reminder: true, extras: [.adhkar, .friday], after: .distantPast)
+                .map { "\(Int($0.at.timeIntervalSince1970 / 60)) \($0.kind.rawValue) \($0.prayer.rawValue)" }.sorted()
+            let want = c.events.map { "\($0.at) \($0.kind) \($0.prayer)" }.sorted()
+            XCTAssertEqual(got, want, "\(c.lat),\(c.lon) \(c.date) \(c.adjust)")
+        }
+        XCTAssertEqual(Self.fixture.schedule.count, 18)
+    }
+
+    /// Foundation's Umm al-Qura calendar agrees with the browser's (Intl) on the Hijri month (Ramadan line).
+    func testHijriParity() {
+        for c in Self.fixture.hijri {
+            XCTAssertEqual(hijriMonth(Date(timeIntervalSince1970: c.ms / 1000), offset: 0), c.month, "\(c.ms)")
+        }
+        XCTAssertEqual(Self.fixture.hijri.count, 146)
     }
 
     func testCountryParity() {

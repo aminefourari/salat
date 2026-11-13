@@ -30,8 +30,9 @@ final class AdhanStoreTests: XCTestCase {
 
     func testImportAndDeleteCustom() throws {
         let s = AdhanStore(root: root)
-        let src = FileManager.default.temporaryDirectory.appendingPathComponent("My Adhan.mp3")
-        try Data("audio".utf8).write(to: src)
+        let src = FileManager.default.temporaryDirectory.appendingPathComponent("My Adhan.m4a")
+        try? FileManager.default.removeItem(at: src)
+        try FileManager.default.copyItem(at: try XCTUnwrap(s.local("hassan2")), to: src)
         let id = try s.importFile(src)
         XCTAssertTrue(id.hasPrefix("custom-"))
         XCTAssertNotNil(s.local(id))
@@ -59,5 +60,27 @@ final class AdhanStoreTests: XCTestCase {
         d.adhanVoice = "fakhry"
         migrateAdhanDefaults(&d) // runs once only
         XCTAssertEqual(d.adhanVoice, "fakhry")
+    }
+
+    func testImportRefusesUndecodableAudio() throws {
+        let s = AdhanStore(root: root)
+        let src = FileManager.default.temporaryDirectory.appendingPathComponent("Broken.mp3")
+        try Data("<html>not audio</html>".utf8).write(to: src)
+        XCTAssertThrowsError(try s.importFile(src))
+        XCTAssertTrue(s.customIds().isEmpty)
+    }
+
+    func testBrokenDownloadFallsBackAndIsDeleted() throws {
+        let s = AdhanStore(root: root)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let broken = root.appendingPathComponent("madinah.mp3")
+        try Data("<html>error</html>".utf8).write(to: broken)
+        XCTAssertEqual(s.playable("madinah"), s.local("hassan2"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: broken.path))
+    }
+
+    func testBundledPlays() {
+        let s = AdhanStore(root: root)
+        XCTAssertEqual(s.playable("hassan2"), s.local("hassan2"))
     }
 }

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computeDay, formatHM, type DayTimes } from '../src/lib/prayer'
 import { habousDayTimes, type Row } from '../src/server/cron'
-import { habousCity, habousDay, habousDays, parseMonth, type HabousStore, type StoredRow } from '../src/server/habous'
+import { habousCity, habousDay, habousDays, monthInWindow, parseMonth, type HabousStore, type StoredRow } from '../src/server/habous'
 
 // Real Habous file for 2026-11, trimmed to Rabat (1) and Casablanca (58).
 const text = readFileSync(new URL('./fixtures/habous-2026-11.js', import.meta.url), 'utf8')
@@ -19,6 +19,15 @@ describe('habous', () => {
     expect(parseMonth('<html>blocked</html>')).toBeNull()
     expect(parseMonth(text.replace('"05:17"', '"5:17"'))).toBeNull()
     expect(parseMonth(text.replace('"fuseau":"GMT"', '"fuseau":"GMT+1"'))!.offsetMin).toBe(60)
+  })
+
+  it('only allows last month to next month (Moroccan date)', () => {
+    const now = new Date('2026-11-15T12:00:00Z')
+    expect(['2026-10', '2026-11', '2026-12'].map(m => monthInWindow(m, now))).toEqual([true, true, true])
+    expect(['2026-09', '2027-01', '0000-01', '9999-12'].map(m => monthInWindow(m, now))).toEqual([false, false, false, false])
+    expect(monthInWindow('2027-01', new Date('2026-12-20T12:00:00Z'))).toBe(true)
+    // Two months back is out (well clear of midnight: Morocco's UTC offset differs between time-zone databases)
+    expect(monthInWindow('2026-11', new Date('2027-01-01T12:00:00Z'))).toBe(false)
   })
 
   it('finds the nearest listed city within 25 km', () => {
@@ -43,7 +52,7 @@ describe('habous', () => {
     const dayTimes = habousDayTimes(store)
     const row = (lat: number, lon: number, asr = 'standard'): Row => ({
       endpoint: 'e', p256dh: '', auth: '', lat, lon, tz: TZ, method: 'auto', asr, lang: 'fr',
-      notify_start: 1, notify_reminder: 1, notify_adhkar: 0, notify_friday: 0, adjust: '{}', last_sent_at: 0, updated_at: 0,
+      notify_start: 1, notify_reminder: 1, notify_adhkar: 0, notify_friday: 0, adjust: '{}', notify_prayers: 31, last_sent_at: 0, updated_at: 0,
     })
     const now = new Date('2026-11-11T12:00:00Z')
     const times = (await dayTimes(row(CASA.lat, CASA.lon), now))!

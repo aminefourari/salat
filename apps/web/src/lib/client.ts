@@ -1,12 +1,14 @@
 // Browser-only helpers and hooks: persisted settings, location, push subscription.
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { detectLang } from './i18n'
+import { habousMonthToFetch, mergeHabous, type HabousDays } from './habous-days'
 import { fetchJson } from './load'
-import { countryAt } from './methods'
-import { adjustDay, computeDay, dateIn, nextDate, usesHabous, type DayTimes, type Settings } from './prayer'
+import type { Bookmark } from './quran'
+import { adjustDay, computeDay, dateIn, nextDate, resolved, usesHabous, type DayTimes, type Settings } from './prayer'
 
 export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null }
-export type Notify = { start: boolean; reminder: boolean; adhkar: boolean; friday: boolean }
+/** `prayers`: which prayers notify, a bitmask in PRAYERS order (31 = all). */
+export type Notify = { start: boolean; reminder: boolean; adhkar: boolean; friday: boolean; prayers: number }
 
 const KEYS = { settings: 'salat.settings', loc: 'salat.loc', notify: 'salat.notify' } as const
 const listeners = new Set<() => void>()
@@ -36,7 +38,7 @@ const defaultSettings = (): Settings =>
   typeof navigator === 'undefined' ? DEFAULT_SETTINGS : { ...DEFAULT_SETTINGS, lang: detectLang(navigator.language) }
 let initialSettings: Settings | undefined
 export const useSettings = () => useStored<Settings>(KEYS.settings, (initialSettings ??= defaultSettings()), DEFAULT_SETTINGS)
-const NO_NOTIFY: Notify = { start: true, reminder: true, adhkar: false, friday: false }
+const NO_NOTIFY: Notify = { start: true, reminder: true, adhkar: false, friday: false, prayers: 31 }
 export const useNotify = () => useStored<Notify>(KEYS.notify, NO_NOTIFY, NO_NOTIFY)
 
 const NO_LOC = null as Loc | null
@@ -66,10 +68,14 @@ export function useLocation() {
         const prev = read<Loc | null>(KEYS.loc, null)
         const next = { lat: coords.latitude, lon: coords.longitude }
         if (!prev || km(prev, next) > 5) {
-          write<Loc>(KEYS.loc, { ...next, at: Date.now(), country: countryAt(next.lat, next.lon) })
-          syncPush().catch(() => {})
-        }
-        resolveCity()
+          // The world borders are ~600 KB: loaded only when the device reaches a new place (then kept by the service
+          // worker). The location is saved once its country is known, so times never show with a guessed method.
+          import('./country').then(({ countryAt }) => {
+            write<Loc>(KEYS.loc, { ...next, at: Date.now(), country: countryAt(next.lat, next.lon) })
+            syncPush().catch(() => {})
+            resolveCity()
+          }).catch(() => {})
+        } else resolveCity()
         setStatus('ok')
       },
       () => setStatus('denied'),
@@ -119,7 +125,7 @@ async function post(sub: PushSubscription) {
     body: JSON.stringify({
       subscription: sub.toJSON(), lat: loc.lat, lon: loc.lon, tz: tz(),
       settings: read(KEYS.settings, defaultSettings()), notifyStart: notify.start, notifyReminder: notify.reminder,
-      notifyAdhkar: notify.adhkar, notifyFriday: notify.friday,
+      notifyAdhkar: notify.adhkar, notifyFriday: notify.friday, notifyPrayers: notify.prayers,
     }),
   })
   if (!res.ok) throw new Error(`subscribe failed: ${res.status}`)
@@ -158,34 +164,29 @@ export function setNotify(n: Notify) { write(KEYS.notify, n); syncPush().catch((
 // ---- day times ----
 
 
-/** Official Habous days for one place (YYYY-MM-DD → epoch ms), fetched a month at a time; `none` = no Habous city near. */
-type Habous = { place: string; days: Record<string, number[]>; none?: boolean }
 const HABOUS_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
 const toDay = (ms: number[]) => Object.fromEntries(HABOUS_KEYS.map((k, i) => [k, new Date(ms[i])])) as DayTimes
-const NO_HABOUS: Habous = { place: '', days: {} }
+const NO_HABOUS: HabousDays = { place: '', days: {} }
 
 /** Official Habous times for Morocco: asks our Worker for a whole month once, then reads it locally (and offline). */
-function useHabous(loc: Loc | null, s: Settings, date: string): Habous['days'] | null {
-  const on = !!loc && usesHabous(loc.lat, loc.lon, s)
+function useHabous(loc: Loc | null, s: Settings, date: string): HabousDays['days'] | null {
+  const on = !!loc && usesHabous(loc.country, s)
   const place = on ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}` : ''
-  const saved = useStored<Habous>('salat.habous', NO_HABOUS, NO_HABOUS)[0]
+  const saved = useStored<HabousDays>('salat.habous', NO_HABOUS, NO_HABOUS)[0]
   const mine = saved.place === place
   // The month still missing for today or tomorrow, if any.
-  const tomorrow = nextDate(date)
-  const month = !place || (mine && saved.none) ? '' : !(mine && saved.days[date]) ? date.slice(0, 7) : !saved.days[tomorrow] ? tomorrow.slice(0, 7) : ''
+  const month = habousMonthToFetch(saved, place, date)
   useEffect(() => {
     if (!month) return
     const [lat, lon] = place.split(',')
     fetch(`/api/habous?lat=${lat}&lon=${lon}&month=${month}`)
       .then(async r => {
-        if (r.status === 404) return write<Habous>('salat.habous', { place, days: {}, none: true })
+        if (r.status === 404) return write<HabousDays>('salat.habous', { place, days: {}, none: true })
         if (!r.ok) return // Habous down or month not published yet: calculated meanwhile, asked again next open
-        const { days } = (await r.json()) as Pick<Habous, 'days'>
-        const cur = read<Habous>('salat.habous', NO_HABOUS)
+        const { days } = (await r.json()) as Pick<HabousDays, 'days'>
         // Same place: keep what we have from yesterday on, add the new month. Another place: start over.
         const yesterday = new Date(Date.parse(`${date}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
-        const kept = cur.place === place ? Object.fromEntries(Object.entries(cur.days).filter(([d]) => d >= yesterday)) : {}
-        write<Habous>('salat.habous', { place, days: { ...kept, ...days } })
+        write<HabousDays>('salat.habous', mergeHabous(read<HabousDays>('salat.habous', NO_HABOUS), place, days, yesterday))
       })
       .catch(() => {})
   }, [place, month, date])
@@ -206,8 +207,8 @@ export function useDays(loc: Loc | null, s: Settings, now: Date): { today: DayTi
 }
 
 /** One day's times: official Habous when known, calculated otherwise, then the user's minute offsets. */
-export const dayFor = (loc: Loc, s: Settings, date: string, habous: Habous['days'] | null) =>
-  adjustDay(habous?.[date] ? toDay(habous[date]) : computeDay(loc.lat, loc.lon, date, tz(), s), s.adjust)
+export const dayFor = (loc: Loc, s: Settings, date: string, habous: HabousDays['days'] | null) =>
+  adjustDay(habous?.[date] ? toDay(habous[date]) : computeDay(loc.lat, loc.lon, date, tz(), resolved(loc.country, s)), s.adjust)
 
 /** Every day of `month` (YYYY-MM) for the monthly timetable. Habous days are those the device has fetched. */
 export function useMonth(loc: Loc | null, s: Settings, month: string, now: Date) {
@@ -231,8 +232,8 @@ export async function testPush() {
 }
 
 /** Quran and adhkar reading state, per device. */
-export type ReadPrefs = { reciter: number; surah: number; ayah: number; adhkar: number }
-const DEFAULT_READ: ReadPrefs = { reciter: 7, surah: 1, ayah: 1, adhkar: 27 }
+export type ReadPrefs = { reciter: number; surah: number; ayah: number; adhkar: number; bookmarks: Bookmark[] }
+const DEFAULT_READ: ReadPrefs = { reciter: 7, surah: 1, ayah: 1, adhkar: 27, bookmarks: [] }
 export const useReadPrefs = () => useStored<ReadPrefs>('salat.read', DEFAULT_READ, DEFAULT_READ)
 
 /** Runs a memoised `load()` (see lib/load.ts); `failed` + `retry` for when it couldn't (offline). */

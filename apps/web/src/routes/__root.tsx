@@ -48,7 +48,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
   }, [lang])
   useEffect(() => {
-    if ('serviceWorker' in navigator && !import.meta.env.DEV) navigator.serviceWorker.register('/sw.js').catch(err => console.error('sw', err))
+    if ('serviceWorker' in navigator && !import.meta.env.DEV) navigator.serviceWorker.register(`/sw.js?v=${import.meta.env.VITE_BUILD_ID}`).catch(err => console.error('sw', err))
     // Re-send this device's location/tz/settings/endpoint on every open, so a missed sync, a time zone
     // change or a rotated push subscription heals itself.
     syncPush().catch(() => {})

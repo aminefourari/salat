@@ -1,12 +1,16 @@
-import { adjustDay, computeDay, dateIn, PRAYERS, type DayTimes, type Prayer, type Settings } from './prayer'
+import { adjustDay, computeDay, dateIn, PRAYERS, resolved, type DayTimes, type Prayer, type Settings } from './prayer'
 
 export type Sub = {
   lat: number; lon: number; tz: string; settings: Settings
+  /** ISO country of (lat, lon): picks the method when settings say 'auto'. */
+  country: string | null
   notifyStart: boolean; notifyReminder: boolean; lastSentAt: number
   /** Morning adhkar after Fajr, evening adhkar after Asr. */
   notifyAdhkar?: boolean
   /** Friday: Surat al-Kahf in the morning, Jumuʿah before Dhuhr. */
   notifyFriday?: boolean
+  /** Prayers whose start and 10-min reminder notify, a bitmask in PRAYERS order (unset = all), like the Mac's per-prayer modes. */
+  notifyPrayers?: number
 }
 export type EventKind = 'start' | 'reminder' | 'adhkarMorning' | 'adhkarEvening' | 'kahf' | 'jumuah'
 /** `prayer` is the prayer the event hangs off (Fajr for the morning adhkar, Dhuhr for Jumuʿah…). */
@@ -26,14 +30,15 @@ const shiftDate = (date: string, days: number) =>
 export const isFriday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay() === 5
 
 /** Every event of one calendar day (`date`, YYYY-MM-DD) for these switches. */
-export function dayEvents(sub: Omit<Sub, 'lastSentAt' | 'lat' | 'lon' | 'tz' | 'settings'>, date: string, day: DayTimes): DueEvent[] {
+export function dayEvents(sub: Omit<Sub, 'lastSentAt' | 'lat' | 'lon' | 'tz' | 'settings' | 'country'>, date: string, day: DayTimes): DueEvent[] {
   const out: DueEvent[] = []
   const add = (on: boolean | undefined, prayer: Prayer, kind: EventKind, at: number) =>
     on && out.push({ prayer, kind, at: new Date(at), prayerTime: day[prayer] })
-  for (const prayer of PRAYERS) {
+  PRAYERS.forEach((prayer, i) => {
+    if (sub.notifyPrayers !== undefined && !(sub.notifyPrayers & (1 << i))) return
     add(sub.notifyReminder, prayer, 'reminder', day[prayer].getTime() - REMINDER_MIN * MIN)
     add(sub.notifyStart, prayer, 'start', day[prayer].getTime())
-  }
+  })
   add(sub.notifyAdhkar, 'fajr', 'adhkarMorning', day.fajr.getTime() + ADHKAR_AFTER_MIN * MIN)
   add(sub.notifyAdhkar, 'asr', 'adhkarEvening', day.asr.getTime() + ADHKAR_AFTER_MIN * MIN)
   if (isFriday(date)) {
@@ -50,7 +55,7 @@ export function dueEvents(sub: Sub, now: Date, dayTimes?: (date: string) => DayT
   const today = dateIn(now, sub.tz)
   return [shiftDate(today, -1), today, shiftDate(today, 1)]
     .flatMap(date => {
-      const day = adjustDay(dayTimes?.(date) ?? computeDay(sub.lat, sub.lon, date, sub.tz, sub.settings), sub.settings.adjust)
+      const day = adjustDay(dayTimes?.(date) ?? computeDay(sub.lat, sub.lon, date, sub.tz, resolved(sub.country, sub.settings)), sub.settings.adjust)
       return dayEvents(sub, date, day)
     })
     .filter(e => e.at.getTime() > from && e.at.getTime() <= to)

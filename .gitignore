@@ -1,11 +1,12 @@
 
-!.dev.vars.example
-!.env.example
 *.local
 .DS_Store
 .dev.vars
 .dev.vars*
 .env
+# after the patterns above, so these stay committable
+!.dev.vars.example
+!.env.example
 .nitro
 .output
 .playwright-mcp

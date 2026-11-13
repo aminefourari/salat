@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
-import { computeDay, type Settings } from '../src/lib/prayer'
+import { computeDay, type DayTimes, type Resolved } from '../src/lib/prayer'
 import { payloadFor, prefetchHabous, runCron, toSub, type Row, type Store } from '../src/server/cron'
 import type { HabousStore } from '../src/server/habous'
 import { t } from '../src/lib/i18n'
 
-const settings: Settings = { method: 'aachen', asr: 'standard', lang: 'fr' }
+const settings: Resolved = { method: 'aachen', asr: 'standard', lang: 'fr' }
 const isha = computeDay(53.4319, 11.1903, '2026-11-08', 'Europe/Berlin', settings).isha
 const now = new Date(isha.getTime() + 10_000)
 
 const row = (endpoint: string, lang = 'fr'): Row => ({
   endpoint, p256dh: 'k', auth: 'a', lat: 53.4319, lon: 11.1903, tz: 'Europe/Berlin',
-  method: 'aachen', asr: 'standard', lang, notify_start: 1, notify_reminder: 1, notify_adhkar: 0, notify_friday: 0, adjust: '{}',
+  method: 'aachen', asr: 'standard', lang, notify_start: 1, notify_reminder: 1, notify_adhkar: 0, notify_friday: 0, adjust: '{}', notify_prayers: 31,
   last_sent_at: now.getTime() - 60_000, updated_at: 0,
 })
 
@@ -44,6 +44,26 @@ describe('runCron', () => {
     const sent: string[] = []
     await runCron(store, now, async r => { if (r.endpoint.endsWith('bad')) throw new Error('boom'); sent.push(r.endpoint); return 'ok' })
     expect(sent).toEqual(['https://p/2'])
+  })
+
+  it('after a partial failure, retries only what was not delivered', async () => {
+    const t0 = new Date('2026-11-08T17:00:00Z')
+    const h = (n: number) => new Date(t0.getTime() + n * 3600_000)
+    const day: DayTimes = { fajr: h(-6), sunrise: h(-5), dhuhr: h(-4), asr: new Date(t0.getTime() - 60_000), maghrib: t0, isha: h(1) }
+    const store = memStore([{ ...row('https://p/1'), notify_reminder: 0, last_sent_at: 0 }])
+    const dayTimesFor = async () => (date: string) => (date === '2026-11-08' ? day : null)
+    const sent: string[] = []
+    // Minute 1: Asr start succeeds, Maghrib start fails.
+    await runCron(store, new Date(t0.getTime() + 1000), async (_, p) => { sent.push(p.tag); return p.tag.startsWith('maghrib') ? 'error' : 'ok' }, dayTimesFor)
+    expect(sent).toEqual(['asr-start', 'maghrib-start'])
+    // Minute 2: only Maghrib is retried.
+    sent.length = 0
+    await runCron(store, new Date(t0.getTime() + 61_000), async (_, p) => { sent.push(p.tag); return 'ok' }, dayTimesFor)
+    expect(sent).toEqual(['maghrib-start'])
+    // Minute 3: nothing left.
+    sent.length = 0
+    await runCron(store, new Date(t0.getTime() + 121_000), async (_, p) => { sent.push(p.tag); return 'ok' }, dayTimesFor)
+    expect(sent).toEqual([])
   })
 
   it('has reminder copy in all languages', () => {

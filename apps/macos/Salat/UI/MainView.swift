@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The app window's sections; persisted so the menu-bar buttons and ⌘1–3 can switch them.
+/// The app window's sections; persisted so the menu-bar buttons and ⌘1–4 can switch them.
 enum AppSection: String, CaseIterable {
-    case prayer, quran, adhkar
+    case prayer, quran, adhkar, month
 
-    var key: L10nKey { switch self { case .prayer: .prayerTimes; case .quran: .quran; case .adhkar: .adhkar } }
-    var symbol: String { switch self { case .prayer: "clock"; case .quran: "book"; case .adhkar: "hands.and.sparkles" } }
+    var key: L10nKey { switch self { case .prayer: .prayerTimes; case .month: .monthly; case .quran: .quran; case .adhkar: .adhkar } }
+    var symbol: String { switch self { case .prayer: "clock"; case .month: "calendar"; case .quran: "book"; case .adhkar: "hands.and.sparkles" } }
 }
 
 /// One window for everything: prayer times, Quran and adhkar, switched from the toolbar.
@@ -29,6 +29,7 @@ struct MainView: View {
                 }
                 .themedWindow(sky: engine.sky)
                 .navigationTitle(t(.prayerTimes, lang))
+            case .month: MonthView(engine: engine)
             case .quran: QuranView(settings: engine.settings, player: quran)
             case .adhkar: AdhkarView(settings: engine.settings, player: adhkar)
             }
@@ -45,7 +46,7 @@ struct MainView: View {
     }
 }
 
-/// ⌘1–3 in the View menu.
+/// ⌘1–4 in the View menu.
 struct SectionCommands: Commands {
     @AppStorage("section") private var section = AppSection.prayer
     let lang: Lang

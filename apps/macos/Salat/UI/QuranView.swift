@@ -13,7 +13,8 @@ struct QuranView: View {
     @State private var selection: Int?
     /// Ayah to open the selected surah at (from the hizb list).
     @State private var jump: Int?
-    @State private var byHizb = false
+    @State private var listMode = ListMode.surahs
+    enum ListMode { case surahs, hizbs, bookmarks }
     /// Reciter for this listen only; nil = the default from Settings.
     @State private var listenReciter: Int?
 
@@ -23,12 +24,17 @@ struct QuranView: View {
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
-                Picker("", selection: $byHizb) {
-                    Text(t(.surahs, lang)).tag(false)
-                    Text(t(.hizbs, lang)).tag(true)
+                Picker("", selection: $listMode) {
+                    Text(t(.surahs, lang)).tag(ListMode.surahs)
+                    Text(t(.hizbs, lang)).tag(ListMode.hizbs)
+                    Text(t(.bookmarks, lang)).tag(ListMode.bookmarks)
                 }
                 .pickerStyle(.segmented).labelsHidden().padding(8)
-                if byHizb { hizbList } else { surahList }
+                switch listMode {
+                case .surahs: surahList
+                case .hizbs: hizbList
+                case .bookmarks: bookmarkList
+                }
             }
             .background(Theme.panelStrong)
             .navigationSplitViewColumnWidth(min: 220, ideal: 260)
@@ -91,6 +97,35 @@ struct QuranView: View {
             .buttonStyle(.plain)
         }
         .scrollContentBackground(.hidden)
+    }
+
+    @ViewBuilder var bookmarkList: some View {
+        let list = settings.d.bookmarks ?? []
+        if list.isEmpty {
+            Text(t(.noBookmarks, lang)).font(Theme.plex(12)).foregroundStyle(Theme.soft).padding().frame(maxHeight: .infinity, alignment: .top)
+        } else {
+            List(list, id: \.at) { b in
+                let s = QuranText.surahs[b.surah - 1]
+                Button { jump = b.ayah; selection = b.surah } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "bookmark.fill").foregroundStyle(Theme.gold)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("\(lang == .ar ? s.ar : s.en) \(b.ayah.formatted(.number.locale(lang.locale)))").font(Theme.plex(13, semibold: true))
+                            Text(b.at.formatted(.dateTime.day().month(.abbreviated).year().locale(lang.locale)))
+                                .font(Theme.plex(11)).foregroundStyle(Theme.soft)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 2)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button(t(.removeBookmark, lang)) { settings.d.bookmarks = toggleBookmark(list, surah: b.surah, ayah: b.ayah, now: Date()) }
+                }
+            }
+            .scrollContentBackground(.hidden)
+        }
     }
 
     var selectedIsLoaded: Bool { player.surah == selection && player.reciter == reciter && player.state == .ready }
@@ -178,9 +213,16 @@ struct SurahView: View {
                                     if player.state == .ready && isCurrent { player.seek(toAyah: a); player.resume() }
                                     else { Task { await player.play(surah: surah.n, reciter: reciter, fromAyah: a) } }
                                 }
-                            Button(t(.tafsir, lang), systemImage: "book") { tafsirAyah = TafsirAyah(surah: surah.n, ayah: a) }
-                                .buttonStyle(.borderless).font(Theme.plex(11)).foregroundStyle(Theme.soft)
-                                .padding(.horizontal, 16)
+                            HStack(spacing: 14) {
+                                Button(t(.tafsir, lang), systemImage: "book") { tafsirAyah = TafsirAyah(surah: surah.n, ayah: a) }
+                                let saved = isBookmarked(settings.d.bookmarks ?? [], surah: surah.n, ayah: a)
+                                Button(t(saved ? .removeBookmark : .bookmark, lang), systemImage: saved ? "bookmark.fill" : "bookmark") {
+                                    settings.d.bookmarks = toggleBookmark(settings.d.bookmarks ?? [], surah: surah.n, ayah: a, now: Date())
+                                }
+                                .foregroundStyle(saved ? Theme.gold : Theme.soft)
+                            }
+                            .buttonStyle(.borderless).font(Theme.plex(11)).foregroundStyle(Theme.soft)
+                            .padding(.horizontal, 16)
                             }
                             .id(a)
                         }

@@ -10,10 +10,11 @@ final class AdhanPlayer: NSObject, AVAudioPlayerDelegate {
 
     func play(_ id: String) {
         stop()
-        // Not downloaded yet (or a deleted custom file): fall back to a bundled adhan, never silence.
+        // Not downloaded yet, broken (deleted by `playable`) or a deleted custom file: the bundled adhan plays instead,
+        // never silence, and a missing download is fetched for next time.
+        let url = AdhanStore.shared.playable(id)
         if AdhanStore.shared.local(id) == nil, let v = AdhanVoice.find(id) { Task.detached { try? await AdhanStore.shared.download(v) } }
-        guard let url = AdhanStore.shared.local(id) ?? AdhanStore.shared.local("hassan2"),
-              let p = try? AVAudioPlayer(contentsOf: url) else { NSSound.beep(); return }
+        guard let url, let p = try? AVAudioPlayer(contentsOf: url) else { NSSound.beep(); return }
         p.delegate = self
         player = p
         isPlaying = p.play()

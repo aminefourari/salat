@@ -18,6 +18,16 @@ struct RubInfo: Equatable, Sendable {
 
 struct HizbStart: Equatable, Sendable { let hizb, juz, surah, ayah: Int }
 
+/// A saved ayah (newest first in the list); per device, like the reading position (mirrors the website's `Bookmark`).
+struct Bookmark: Codable, Equatable, Sendable { let surah, ayah: Int; let at: Date }
+let maxBookmarks = 20
+func isBookmarked(_ list: [Bookmark], surah: Int, ayah: Int) -> Bool { list.contains { $0.surah == surah && $0.ayah == ayah } }
+/// Adds the ayah at the top (keeping the newest `maxBookmarks`), or removes it when it's already saved.
+func toggleBookmark(_ list: [Bookmark], surah: Int, ayah: Int, now: Date) -> [Bookmark] {
+    if isBookmarked(list, surah: surah, ayah: ayah) { return list.filter { !($0.surah == surah && $0.ayah == ayah) } }
+    return Array(([Bookmark(surah: surah, ayah: ayah, at: now)] + list).prefix(maxBookmarks))
+}
+
 /// Where each of the 60 hizbs starts (mirrors `hizbStarts` in apps/web/src/lib/quran.ts).
 func hizbStarts(_ surahs: [Surah]) -> [HizbStart] {
     surahs.flatMap { s in

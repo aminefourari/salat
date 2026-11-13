@@ -63,8 +63,8 @@ match Muslim Pro's within a minute or two.
 ## Non-goals
 
 - No accounts or login. A device is identified by its push subscription only.
-- No adhan audio playback, no Quran, no hijri calendar beyond maybe a date line, no social features.
-- No per-prayer manual minute adjustments (can come later if a mosque differs).
+- No adhan audio playback, no Quran, no hijri calendar beyond maybe a date line, no social features. (Quran and the Hijri date: superseded, shipped later, see CLAUDE.md)
+- No per-prayer manual minute adjustments (can come later if a mosque differs). (superseded: shipped later, see CLAUDE.md)
 - No native apps.
 
 ## Anti-goals (failure even if it "works")
