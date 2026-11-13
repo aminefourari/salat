@@ -26,8 +26,8 @@ describe('habous', () => {
     expect(['2026-10', '2026-11', '2026-12'].map(m => monthInWindow(m, now))).toEqual([true, true, true])
     expect(['2026-09', '2027-01', '0000-01', '9999-12'].map(m => monthInWindow(m, now))).toEqual([false, false, false, false])
     expect(monthInWindow('2027-01', new Date('2026-12-20T12:00:00Z'))).toBe(true)
-    // 23:30 UTC on Dec 31 is already Jan 1 in Casablanca (GMT+1)
-    expect(monthInWindow('2026-11', new Date('2026-12-31T23:30:00Z'))).toBe(false)
+    // Two months back is out (well clear of midnight: Morocco's UTC offset differs between time-zone databases)
+    expect(monthInWindow('2026-11', new Date('2027-01-01T12:00:00Z'))).toBe(false)
   })
 
   it('finds the nearest listed city within 25 km', () => {
