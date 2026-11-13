@@ -11,6 +11,7 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 
 - `npm run dev`: web dev on :3000 (Vite + workerd via `@cloudflare/vite-plugin`)
 - `npm test`: Vitest (`apps/web/test`), incl. the shared parity fixture check
+- `npm run typecheck`: `tsc --noEmit` for the web app (also in CI)
 - `npm run build` / `npm run deploy`: build, then `wrangler deploy` (runs in `apps/web`)
 - `npm run db:migrate`: apply `apps/web/migrations/` to remote D1 `salat`
 - `cd apps/web && npx wrangler secret put VAPID_PRIVATE_KEY`: push signing key (never commit it)
@@ -45,9 +46,14 @@ Specs: `docs/superpowers/specs/` (PWA: `2026-11-08-salat-pwa-design.md`, Mac: `2
 - Parity rule: changing `methods.ts`/`paramsFor` → port it to `Core/Methods.swift`, then `UPDATE_MAC_DATA=1 npm test` (regenerates `fixtures/parity.json` and the Mac's borders/cities resources) and `npm run mac:test`.
 - Per-country method config is data in `methods.ts` / `Methods.swift`; adding a country is one entry in each.
 - Times are formatted in the device's/subscription's IANA time zone, never UTC.
+- Languages: ar, en, fr, de, nl, es, pt, it (web `Lang`/`LANGS` in `lib/prayer.ts`, strings in `lib/i18n.ts` typed `Record<Key, string>` so tsc enforces completeness; Swift `Lang` + `Core/L10n.swift`, `missingKeys` kept empty by `AdhkarTests`). Adding a language: one dict per app, plus `methodNames` in Swift. Adhkar are translated into en/fr only; other languages show English (`translationLang`). Tafsir: Muyassar for every language, plus Ibn Kathir in English.
+- The calculation method comes from the place's country: browser code passes `loc.country` (saved with the location; `lib/country.ts` and its ~600 KB borders load lazily), the Worker and tests call `countryAt`. `computeDay` takes `Resolved` settings (a concrete method, like Swift's `computeDay(…method:asr:)`).
+- Service worker: one cache per deploy (`/sw.js?v=<build id>`), install precaches pages and everything they reference transitively.
+- Push: `/api/subscribe` accepts only browser push-service endpoints with RFC 8291 key sizes (`isPushEndpoint`, `validKeys`); `PATCH` moves a row when the browser rotates the subscription (`pushsubscriptionchange` in `sw.js`, which holds a copy of the VAPID public key). `notify_prayers` is a bitmask in `PRAYERS` order, like the Mac's per-prayer modes.
 - User minute offsets (`adjustDay` / Swift `adjustDay`) apply after `computeDay` or Habous, never inside it, so parity fixtures stay pure.
-- Reminder kinds (`lib/schedule.ts` `dayEvents`, Swift `Scheduler.swift` `Extras`) are the same in both apps: prayer start, 10 min before, adhkar (Fajr/Asr + 20 min, chapter 27), Friday Kahf (sunrise + 1 h) and Jumuʿah (Dhuhr − 45 min).
+- Reminder kinds (`lib/schedule.ts` `dayEvents`, Swift `Scheduler.swift` `Extras`) are the same in both apps: prayer start, 10 min before, adhkar (Fajr/Asr + 20 min, chapter 27), Friday Kahf (sunrise + 1 h) and Jumuʿah (Dhuhr − 45 min). `fixtures/parity.json` pins them (with offsets) and the Hijri month for both apps. The Mac `AlertClock` keys fired events by day/prayer/kind so a time moving ≤ 30 min (Habous arriving, an offset) fires once.
 - Morocco (method `morocco`, standard Asr): official Habous times, imported once per month from habous.gov.ma into D1 (`habous_times`, `server/habous.ts`) and served by the Worker's `/api/habous?month=` (clients fetch a month and keep it) (web `useDays`, cron, Mac `AlertEngine` + `Core/Habous.swift`); the 19°/17° calculation is the fallback.
 - No accounts, analytics, or third-party client calls. Exceptions: recitations from quran.com (`api.quran.com`, `download.quranicaudio.com`) and adhkar audio from `www.hisnmuslim.com` (the Mac app caches them offline; the website streams them directly from the browser), and per-ayah tafsir text from `api.quran.com/api/v4/tafsirs` (Muyassar; Ibn Kathir abridged too in English), fetched on demand and reduced to plain text by `tafsirText` (user decisions).
+- Quran bookmarks: per device, newest first, at most 20 (web `ReadPrefs.bookmarks`, Swift `Settings.bookmarks`; `toggleBookmark` on both sides).
 - Juz/hizb: `data/quran.json` carries each surah's rubʿ starts (`rub: [[ayah, rub]]`, 240 in all); hizb = ⌈rub/4⌉, juz = ⌈rub/8⌉ (`rubInfo`/`RubInfo`, `hizbStarts`).
 - UI changes on the Mac: check them with `Salat.app/Contents/MacOS/Salat -snapshot DIR` (renders the menu and each window section: times, Quran, adhkar, in dark and light) and refresh `docs/screenshots/`.

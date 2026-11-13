@@ -4,19 +4,23 @@
 
 Prayer times, adhan, Quran and adhkar. Free, no accounts, no tracking. Salat is and stays free.
 
+In Arabic, English, French, German, Dutch, Spanish, Portuguese and Italian. The adhkar translations are in English and
+French; the other languages show the English one.
+
 - **Web app** (`apps/web`): an installable PWA on Cloudflare Workers.
-  - Today's prayer times for your location, with push notifications at each prayer and 10 minutes before.
+  - Today's prayer times for your location, with push notifications at each prayer and 10 minutes before (choose which prayers).
   - Optional reminders for the morning and evening adhkar, and on Fridays for Surat al-Kahf and Jumuʿah.
   - Per-prayer minute adjustments to match your mosque, a Hijri date offset, and imsak/iftar during Ramadan.
   - A printable monthly timetable.
   - A Qibla compass.
-  - A Quran reader with streamed recitation and read-along highlighting.
+  - A Quran reader with streamed recitation, read-along highlighting, juz/hizb markers, tafsir and bookmarks.
   - Hisn al-Muslim adhkar with audio.
 - **Mac app** (`apps/macos`): a native menu-bar app.
   - Next prayer and countdown in the menu bar.
   - The full adhan at each prayer. Madinah (Sheikh Essam Bukhari) is the default; Makkah (Ali Ahmed Mulla, Fajr),
     Mishary Alafasy, Al-Aqsa and Abdul Basit download on first use, and you can add your own recording.
-  - A Quran reader with eight reciters and read-along highlighting, available offline.
+  - A Quran reader with eight reciters, read-along highlighting and bookmarks, available offline.
+  - A monthly timetable (⌘4), printable.
   - Hisn al-Muslim adhkar in Arabic, English and French, with audio.
   - The same reminders, adjustments, Hijri offset and Ramadan times as the website.
   - A desktop and Notification Center widget with the next prayer and today's times.
@@ -41,14 +45,15 @@ test fixture keeps the two in sync.
 
 It requires macOS 15 or later. Salat starts at login by default; you can change this in Settings → General.
 
-Salat checks for new versions once a day and offers to install them (Settings → General → Updates). Versions before
-1.1.0 don't have this yet, so update those once by hand.
+Salat checks for new versions once a day and offers to install them (Settings → General → Updates). Updates come from
+this repository's GitHub Releases through the project's own Worker, over HTTPS, and are checked against the release's
+SHA-256. Versions before 1.1.0 don't have this yet, so update those once by hand.
 
 ## Development
 
 ```sh
 npm install
-npm run dev            # web app on :3000
+npm run dev            # web app on :3000 (cp apps/web/.dev.vars.example apps/web/.dev.vars to send pushes locally)
 npm test               # web tests (Vitest), incl. the web↔Mac parity fixture
 npm run deploy         # build + wrangler deploy (Cloudflare Worker "salat")
 
@@ -63,15 +68,19 @@ in dark and light, then quits.
 
 ## Releasing
 
-CI (`.github/workflows/ci.yml`) runs the web and Swift tests on every push to `main` and on pull requests. To publish a
-release, push a version tag:
+CI (`.github/workflows/ci.yml`) runs the web and Swift tests and the type-check on every pull request and push to
+`main`. On `main` it also applies the D1 migrations and deploys the Worker (repo secrets `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID`).
+
+Every push to `main` that touches `apps/macos/`, `data/` or `.github/workflows/release.yml` publishes the next patch
+release automatically (`.github/workflows/release.yml`: tests, an unsigned `Salat.app` build, and a GitHub Release with
+`Salat-vX.Y.Z.zip`). Installed apps offer it in Settings → General → Updates.
+
+For a minor or major version, push a tag higher than the latest release (never reuse one):
 
 ```sh
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.2.0 && git push origin v1.2.0
 ```
-
-`.github/workflows/release.yml` then runs the tests, builds `Salat.app` with that version, and publishes a GitHub
-Release with `Salat-v1.0.0.zip`.
 
 ## Data and credits
 
