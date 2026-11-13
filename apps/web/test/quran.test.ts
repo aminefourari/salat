@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import quran from '../../../data/quran.json'
 import adhkar from '../../../data/adhkar.json'
-import { ayahIndex, hizbStarts, isBookmarked, MAX_BOOKMARKS, parseRecitation, RECITERS, recitationApi, rubInfo, tafsirText, toggleBookmark, type Surah } from '../src/lib/quran'
+import { ayahIndex, hizbStarts, isBookmarked, MAX_BOOKMARKS, parseRecitation, RECITERS, recitationApi, rubInfo, searchAyahs, searchKey, tafsirText, toggleBookmark, type Surah } from '../src/lib/quran'
 import { badge, chapterTitle, translation, type Chapter } from '../src/lib/adhkar'
 import { memoLoad } from '../src/lib/load'
 
@@ -18,6 +18,19 @@ describe('quran', () => {
     expect(h.length).toBe(60)
     expect(h[2]).toEqual({ juz: 2, hizb: 3, quarter: 0, surah: 2, ayah: 142 })
     expect(h[59]).toEqual({ juz: 30, hizb: 60, quarter: 0, surah: 87, ayah: 1 })
+  })
+
+  it('ayah search ignores tashkeel, alefs and Uthmani spelling; s:a jumps', () => {
+    const q = quran as Surah[]
+    expect(searchKey('ٱلرَّحْمَـٰنِ')).toBe(searchKey('الرحمن'))
+    expect(searchAyahs(q, 'الحي القيوم')[0]).toEqual({ surah: 2, ayah: 255 })
+    expect(searchAyahs(q, 'قل هو الله أحد')).toEqual([{ surah: 112, ayah: 1 }])
+    expect(searchAyahs(q, 'الصلاة')[0]).toEqual({ surah: 2, ayah: 3 })
+    expect(searchAyahs(q, 'يا أيها الذين آمنوا').length).toBeGreaterThan(40)
+    expect(searchAyahs(q, 'الله').length).toBe(50)
+    expect(searchAyahs(q, '2:255')).toEqual([{ surah: 2, ayah: 255 }])
+    expect(searchAyahs(q, '١١٤:٦')).toEqual([{ surah: 114, ayah: 6 }])
+    expect([searchAyahs(q, '1:8'), searchAyahs(q, 'ا'), searchAyahs(q, 'hello')]).toEqual([[], [], []])
   })
 
   it('tafsir HTML becomes plain paragraphs', () => {

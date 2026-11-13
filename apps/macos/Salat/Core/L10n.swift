@@ -37,6 +37,7 @@ enum L10nKey: String, CaseIterable, Sendable {
     case updateFailed, updateCorrupt, updateNotWritable
     case monthly, print, prevMonth, nextMonth, date
     case bookmarks, bookmark, removeBookmark, noBookmarks
+    case prevSurah, nextSurah, goToAyah, searchQuran, noResults
 }
 
 private let en: [L10nKey: String] = [
@@ -79,6 +80,7 @@ private let en: [L10nKey: String] = [
     .updateNotWritable: "Salat can't replace itself in this folder. Move it to Applications, or download the update from GitHub.",
     .monthly: "Monthly timetable", .print: "Print…", .prevMonth: "Previous month", .nextMonth: "Next month", .date: "Date",
     .bookmarks: "Bookmarks", .bookmark: "Bookmark", .removeBookmark: "Remove bookmark", .noBookmarks: "No bookmarks yet. Use Bookmark under an ayah to save it.",
+    .prevSurah: "Previous surah", .nextSurah: "Next surah", .goToAyah: "Go to ayah", .searchQuran: "Search the Quran (Arabic text or 2:255)", .noResults: "No matching ayah.",
 ]
 
 private let fr: [L10nKey: String] = [
@@ -121,6 +123,7 @@ private let fr: [L10nKey: String] = [
     .updateNotWritable: "Salat ne peut pas se remplacer dans ce dossier. Placez-le dans Applications, ou téléchargez la mise à jour sur GitHub.",
     .monthly: "Horaires du mois", .print: "Imprimer…", .prevMonth: "Mois précédent", .nextMonth: "Mois suivant", .date: "Date",
     .bookmarks: "Signets", .bookmark: "Marquer", .removeBookmark: "Retirer le signet", .noBookmarks: "Aucun signet. Utilisez « Marquer » sous un verset pour l’enregistrer.",
+    .prevSurah: "Sourate précédente", .nextSurah: "Sourate suivante", .goToAyah: "Aller au verset", .searchQuran: "Rechercher dans le Coran (texte arabe ou 2:255)", .noResults: "Aucun verset trouvé.",
 ]
 
 private let ar: [L10nKey: String] = [
@@ -163,6 +166,7 @@ private let ar: [L10nKey: String] = [
     .updateNotWritable: "لا يستطيع Salat استبدال نفسه في هذا المجلد. انقله إلى مجلد التطبيقات، أو نزّل التحديث من GitHub.",
     .monthly: "مواقيت الشهر", .print: "طباعة…", .prevMonth: "الشهر السابق", .nextMonth: "الشهر التالي", .date: "التاريخ",
     .bookmarks: "العلامات", .bookmark: "حفظ", .removeBookmark: "إزالة العلامة", .noBookmarks: "لا توجد علامات بعد. استخدم «حفظ» تحت أي آية.",
+    .prevSurah: "السورة السابقة", .nextSurah: "السورة التالية", .goToAyah: "الانتقال إلى آية", .searchQuran: "ابحث في القرآن (نص الآية أو ٢:٢٥٥)", .noResults: "لا توجد آية مطابقة.",
 ]
 
 private let de: [L10nKey: String] = [
@@ -205,6 +209,7 @@ private let de: [L10nKey: String] = [
     .updateNotWritable: "Salat kann sich in diesem Ordner nicht ersetzen. Verschiebe es in „Programme“ oder lade das Update von GitHub.",
     .monthly: "Monatsplan", .print: "Drucken…", .prevMonth: "Vorheriger Monat", .nextMonth: "Nächster Monat", .date: "Datum",
     .bookmarks: "Lesezeichen", .bookmark: "Merken", .removeBookmark: "Lesezeichen entfernen", .noBookmarks: "Noch keine Lesezeichen. Nutze „Merken“ unter einem Vers.",
+    .prevSurah: "Vorherige Sure", .nextSurah: "Nächste Sure", .goToAyah: "Zu Vers", .searchQuran: "Im Koran suchen (arabischer Text oder 2:255)", .noResults: "Kein passender Vers.",
 ]
 
 private let nl: [L10nKey: String] = [
@@ -247,6 +252,7 @@ private let nl: [L10nKey: String] = [
     .updateNotWritable: "Salat kan zichzelf in deze map niet vervangen. Zet het in Apps, of download de update van GitHub.",
     .monthly: "Maandrooster", .print: "Afdrukken…", .prevMonth: "Vorige maand", .nextMonth: "Volgende maand", .date: "Datum",
     .bookmarks: "Bladwijzers", .bookmark: "Bewaren", .removeBookmark: "Bladwijzer verwijderen", .noBookmarks: "Nog geen bladwijzers. Gebruik ‘Bewaren’ onder een vers.",
+    .prevSurah: "Vorige soera", .nextSurah: "Volgende soera", .goToAyah: "Naar vers", .searchQuran: "Zoeken in de Koran (Arabische tekst of 2:255)", .noResults: "Geen passend vers.",
 ]
 
 private let es: [L10nKey: String] = [
@@ -289,6 +295,7 @@ private let es: [L10nKey: String] = [
     .updateNotWritable: "Salat no puede reemplazarse en esta carpeta. Muévelo a Aplicaciones o descarga la actualización desde GitHub.",
     .monthly: "Horario mensual", .print: "Imprimir…", .prevMonth: "Mes anterior", .nextMonth: "Mes siguiente", .date: "Fecha",
     .bookmarks: "Marcadores", .bookmark: "Guardar", .removeBookmark: "Quitar marcador", .noBookmarks: "Aún no hay marcadores. Usa «Guardar» bajo una aleya.",
+    .prevSurah: "Sura anterior", .nextSurah: "Sura siguiente", .goToAyah: "Ir a la aleya", .searchQuran: "Buscar en el Corán (texto árabe o 2:255)", .noResults: "Ninguna aleya coincide.",
 ]
 
 private let pt: [L10nKey: String] = [
@@ -331,6 +338,7 @@ private let pt: [L10nKey: String] = [
     .updateNotWritable: "O Salat não pode se substituir nesta pasta. Mova-o para Aplicativos ou baixe a atualização no GitHub.",
     .monthly: "Horário mensal", .print: "Imprimir…", .prevMonth: "Mês anterior", .nextMonth: "Próximo mês", .date: "Data",
     .bookmarks: "Marcadores", .bookmark: "Salvar", .removeBookmark: "Remover marcador", .noBookmarks: "Ainda não há marcadores. Use “Salvar” abaixo de um versículo.",
+    .prevSurah: "Surata anterior", .nextSurah: "Próxima surata", .goToAyah: "Ir para o versículo", .searchQuran: "Pesquisar no Alcorão (texto árabe ou 2:255)", .noResults: "Nenhum versículo encontrado.",
 ]
 
 private let it: [L10nKey: String] = [
@@ -373,6 +381,7 @@ private let it: [L10nKey: String] = [
     .updateNotWritable: "Salat non può sostituirsi in questa cartella. Spostalo in Applicazioni o scarica l’aggiornamento da GitHub.",
     .monthly: "Orario mensile", .print: "Stampa…", .prevMonth: "Mese precedente", .nextMonth: "Mese successivo", .date: "Data",
     .bookmarks: "Segnalibri", .bookmark: "Salva", .removeBookmark: "Rimuovi segnalibro", .noBookmarks: "Ancora nessun segnalibro. Usa «Salva» sotto un versetto.",
+    .prevSurah: "Sura precedente", .nextSurah: "Sura successiva", .goToAyah: "Vai al versetto", .searchQuran: "Cerca nel Corano (testo arabo o 2:255)", .noResults: "Nessun versetto trovato.",
 ]
 
 private let dict: [Lang: [L10nKey: String]] = [.en: en, .fr: fr, .ar: ar, .de: de, .nl: nl, .es: es, .pt: pt, .it: it]

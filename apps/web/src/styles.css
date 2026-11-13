@@ -238,6 +238,17 @@ select {
 .back { display: inline-block; margin: .75rem 0 0; color: var(--gold); text-decoration: none; font-size: .9rem; }
 .back::before { content: '‹ '; }
 [dir='rtl'] .back::before { content: '› '; }
+.surah-nav { display: flex; justify-content: space-between; gap: .75rem; margin: .6rem 0; font-size: .85rem; }
+.surah-nav { align-items: center; }
+.surah-nav a { color: var(--gold); text-decoration: none; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.surah-nav a:last-child { text-align: end; }
+.surah-nav > span { flex: 1; }
+.tools-toggle { flex: none; width: 2.2rem; height: 2.2rem; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--gold); display: grid; place-items: center; cursor: pointer; }
+.tools-toggle[aria-expanded='true'] { border-color: var(--gold); }
+.reader-tools { margin: .5rem 0 1rem; }
+.goto { display: flex; gap: .5rem; margin: 0 0 .75rem; }
+.goto input { flex: 1; min-width: 0; padding: .55rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--royal-deep) 80%, transparent); color: var(--ink); font: inherit; }
+.list-sub.hit { font: 400 1.05rem/1.7 'Amiri Quran', serif; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .surah-head { position: relative; max-width: 16rem; aspect-ratio: 200 / 135; margin: .5rem auto 1rem; display: grid; place-items: center; }
 .surah-head-body { position: relative; text-align: center; padding-top: 14%; } /* centered below the arch's curve */
 .surah-head-body p { margin: 0; }
@@ -337,7 +348,8 @@ select {
   .times { gap: .45rem; }
   .row { padding-block: .75rem; }
   .list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .mushaf, .player, .surah-head + .player { max-width: 48rem; margin-inline: auto; }
+  .mushaf, .player, .surah-head + .player, .reader-tools, .surah-nav { max-width: 48rem; margin-inline: auto; }
+  .reader-tools .list { grid-template-columns: 1fr; }
 }
 
 @media print {
