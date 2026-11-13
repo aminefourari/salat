@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustDay, computeDay, hijriDate, hijriOffset, imsak, type Settings } from '../src/lib/prayer'
+import { adjustDay, computeDay, hijriDate, hijriOffset, imsak, resolved, type Settings } from '../src/lib/prayer'
 
 const s: Settings = { method: 'auto', asr: 'standard', lang: 'en' }
 
@@ -12,14 +12,14 @@ describe('Hijri date', () => {
   })
 
   it('defaults to −1 in Morocco, 0 elsewhere; a chosen offset wins', () => {
-    expect(hijriOffset(33.57, -7.59, s)).toBe(-1)
-    expect(hijriOffset(50.77, 6.08, s)).toBe(0)
-    expect(hijriOffset(33.57, -7.59, { ...s, hijri: 0 })).toBe(0)
+    expect(hijriOffset('MA', s)).toBe(-1)
+    expect(hijriOffset('DE', s)).toBe(0)
+    expect(hijriOffset('MA', { ...s, hijri: 0 })).toBe(0)
   })
 })
 
 describe('adjustDay / imsak', () => {
-  const day = computeDay(50.77, 6.08, '2026-11-11', 'Europe/Berlin', s)
+  const day = computeDay(50.77, 6.08, '2026-11-11', 'Europe/Berlin', resolved('DE', s))
   it('adds minutes per prayer and leaves sunrise alone', () => {
     const a = adjustDay(day, { fajr: -2, maghrib: 3 })
     expect(a.fajr.getTime() - day.fajr.getTime()).toBe(-2 * 60_000)

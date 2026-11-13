@@ -31,6 +31,7 @@ final class AppSettings {
         var adhkarReminder: Bool? = nil
         var fridayReminder: Bool? = nil
         var autoUpdateCheck: Bool? = nil // nil = on
+        var bookmarks: [Bookmark]? = nil // saved ayahs, newest first
     }
 
     private static let key = "settings.v1"

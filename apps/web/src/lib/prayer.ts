@@ -1,14 +1,17 @@
 import { CalculationMethod, CalculationParameters, Coordinates, HighLatitudeRule, Madhab, PrayerTimes, Qibla } from 'adhan'
-import { countryAt, methodForCountry, type MethodId } from './methods'
+import { methodForCountry, type MethodId } from './methods'
 
 export type Prayer = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
 export const PRAYERS: Prayer[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
-export type Lang = 'ar' | 'en' | 'fr'
+export type Lang = 'ar' | 'en' | 'fr' | 'de' | 'nl' | 'es' | 'pt' | 'it'
+export const LANGS: Lang[] = ['ar', 'en', 'fr', 'de', 'nl', 'es', 'pt', 'it']
 export type Adjust = Partial<Record<Prayer, number>>
 /** Per-prayer offsets are limited to ±30 min. */
 export const MAX_ADJUST = 30
 /** `adjust`: minutes added to each prayer (local mosque offsets). `hijri`: days added to the Hijri date (unset = auto). */
 export type Settings = { method: MethodId | 'auto'; asr: 'standard' | 'hanafi'; lang: Lang; adjust?: Adjust; hijri?: number }
+/** Settings with the method resolved ('auto' → the country's method), as `computeDay` needs them. */
+export type Resolved = Omit<Settings, 'method'> & { method: MethodId }
 export type DayTimes = { sunrise: Date } & Record<Prayer, Date>
 
 export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true } = {}): CalculationParameters {
@@ -40,17 +43,20 @@ export function paramsFor(id: MethodId, asr: Settings['asr'], { margins = true }
   return p
 }
 
-export const resolveMethod = (lat: number, lon: number, s: Settings): MethodId =>
-  s.method === 'auto' ? methodForCountry(countryAt(lat, lon)) : s.method
+/** `country`: ISO code of the place (`Loc.country` in the browser, `countryAt` on the Worker). */
+export const resolveMethod = (country: string | null, s: Settings): MethodId =>
+  s.method === 'auto' ? methodForCountry(country) : s.method
+
+export const resolved = (country: string | null, s: Settings): Resolved => ({ ...s, method: resolveMethod(country, s) })
 
 /** Morocco with the standard Asr: the official Habous timetable applies (when a listed city is near). */
-export const usesHabous = (lat: number, lon: number, s: Settings) => resolveMethod(lat, lon, s) === 'morocco' && s.asr === 'standard'
+export const usesHabous = (country: string | null, s: Settings) => resolveMethod(country, s) === 'morocco' && s.asr === 'standard'
 
 /** Prayer times for calendar day `date` (YYYY-MM-DD, as seen in `tz`). */
-export function computeDay(lat: number, lon: number, date: string, _tz: string, s: Settings, params?: CalculationParameters): DayTimes {
+export function computeDay(lat: number, lon: number, date: string, _tz: string, s: Resolved, params?: CalculationParameters): DayTimes {
   const [y, m, d] = date.split('-').map(Number)
   // adhan only reads the local Y/M/D of this Date, so build it in local time.
-  const pt = new PrayerTimes(new Coordinates(lat, lon), new Date(y, m - 1, d), params ?? paramsFor(resolveMethod(lat, lon, s), s.asr))
+  const pt = new PrayerTimes(new Coordinates(lat, lon), new Date(y, m - 1, d), params ?? paramsFor(s.method, s.asr))
   return { fajr: pt.fajr, sunrise: pt.sunrise, dhuhr: pt.dhuhr, asr: pt.asr, maghrib: pt.maghrib, isha: pt.isha }
 }
 
@@ -63,7 +69,7 @@ export function adjustDay(day: DayTimes, adjust: Adjust | undefined): DayTimes {
 }
 
 /** Days to add to the Umm al-Qura date: the user's choice, else −1 in Morocco (sighting usually a day after Makkah). */
-export const hijriOffset = (lat: number, lon: number, s: Settings) => s.hijri ?? (resolveMethod(lat, lon, s) === 'morocco' ? -1 : 0)
+export const hijriOffset = (country: string | null, s: Settings) => s.hijri ?? (resolveMethod(country, s) === 'morocco' ? -1 : 0)
 
 /** Hijri date of `d` shifted by `offset` days: its month number (9 = Ramadan) and a long label in `lang`. */
 export function hijriDate(d: Date, offset: number, lang: Lang): { month: number; label: string } | null {

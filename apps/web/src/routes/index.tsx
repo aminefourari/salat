@@ -62,7 +62,7 @@ function Home() {
   const next = nextPrayer(days.today, days.tomorrow, now)
   const greg = now.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' })
   // Ramadan starts at the Maghrib before its first day: count from tonight once Maghrib has passed.
-  const offset = hijriOffset(loc.lat, loc.lon, settings)
+  const offset = hijriOffset(loc.country, settings)
   const hijri = hijriDate(now, offset, lang)
   const tonight = now >= days.today.maghrib ? hijriDate(new Date(now.getTime() + DAY), offset, lang) : hijri
   const pct = progress(days.today, next.at, now)
@@ -109,7 +109,7 @@ function Home() {
       </div>
       {status === 'denied' && <p className="meta" role="status">{t(lang, 'locationDenied')} <button className="btn" onClick={retry}>{t(lang, 'retry')}</button></p>}
       {days.official ? <p className="meta center">{t(lang, 'official')}</p>
-        : resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
+        : resolveMethod(loc.country, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
       <p className="meta center">{placeLabel(loc, lang)}</p>
     </>
   )

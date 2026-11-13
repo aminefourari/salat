@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import adhkarUrl from '../../../../data/adhkar.json?url'
-import { badge, chapterTitle, translation, type Chapter } from '../lib/adhkar'
+import { badge, chapterTitle, translation, translationLang, type Chapter } from '../lib/adhkar'
 import { useLazy, useReadPrefs, useSettings } from '../lib/client'
 import { fetchJson, memoLoad } from '../lib/load'
 import { t } from '../lib/i18n'
@@ -75,7 +75,7 @@ function ChapterView({ chapter, lang }: { chapter: Chapter; lang: Lang }) {
         return (
           <article key={d.id} className={`dhikr panel${playing === d.id ? ' is-playing' : ''}`}>
             <p className="dhikr-ar" lang="ar" dir="rtl">{d.ar}</p>
-            {tr && <p className="dhikr-tr">{tr}</p>}
+            {tr && <p className="dhikr-tr" lang={translationLang(lang) ?? undefined}>{tr}</p>}
             <div className="dhikr-foot">
               {n && <span className="badge">×{n.toLocaleString(lang === 'ar' ? 'ar-EG' : lang)}</span>}
               {d.ref && <span className="meta">{d.ref}</span>}

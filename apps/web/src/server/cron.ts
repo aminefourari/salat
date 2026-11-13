@@ -1,3 +1,4 @@
+import { countryAt } from '../lib/country'
 import { t } from '../lib/i18n'
 import type { MethodId } from '../lib/methods'
 import { dateIn, formatHM, nextDate, usesHabous, type Adjust, type DayTimes, type Lang, type Settings } from '../lib/prayer'
@@ -8,6 +9,7 @@ export type Row = {
   endpoint: string; p256dh: string; auth: string; lat: number; lon: number; tz: string
   method: string; asr: string; lang: string; notify_start: number; notify_reminder: number
   notify_adhkar: number; notify_friday: number; adjust: string // JSON Adjust
+  notify_prayers: number // bitmask in PRAYERS order
   last_sent_at: number; updated_at: number
 }
 /** `url`: the page a tap opens (adhkar, Surat al-Kahf). */
@@ -24,7 +26,7 @@ export type DayTimesFor = (row: Row, now: Date) => Promise<((date: string) => Da
 /** Morocco rows use the official timetable for yesterday..tomorrow (dueEvents' window); calculated otherwise. */
 export const habousDayTimes = (store: HabousStore): DayTimesFor => async (row, now) => {
   const sub = toSub(row)
-  if (!usesHabous(sub.lat, sub.lon, sub.settings)) return undefined
+  if (!usesHabous(sub.country, sub.settings)) return undefined
   const today = dateIn(now, sub.tz)
   const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
   const days = await habousDays(store, sub.lat, sub.lon, [yesterday, today, nextDate(today)])
@@ -34,9 +36,9 @@ export const habousDayTimes = (store: HabousStore): DayTimesFor => async (row, n
 const parseAdjust = (json: string): Adjust | undefined => { try { return JSON.parse(json) } catch { return undefined } }
 
 export const toSub = (r: Row): Sub => ({
-  lat: r.lat, lon: r.lon, tz: r.tz,
+  lat: r.lat, lon: r.lon, tz: r.tz, country: countryAt(r.lat, r.lon),
   settings: { method: r.method as MethodId | 'auto', asr: r.asr as Settings['asr'], lang: r.lang as Lang, adjust: parseAdjust(r.adjust) },
-  notifyStart: !!r.notify_start, notifyReminder: !!r.notify_reminder, notifyAdhkar: !!r.notify_adhkar, notifyFriday: !!r.notify_friday,
+  notifyStart: !!r.notify_start, notifyReminder: !!r.notify_reminder, notifyAdhkar: !!r.notify_adhkar, notifyFriday: !!r.notify_friday, notifyPrayers: r.notify_prayers,
   lastSentAt: r.last_sent_at,
 })
 
@@ -73,14 +75,16 @@ export async function runCron(store: Store, now: Date, send: (r: Row, p: Payload
       const sub = toSub(row)
       const events = dueEvents(sub, now, await dayTimesFor?.(row, now))
       if (!events.length) continue
-      let ok = true
+      // Events are sorted by time. On the first transient error stop, and move last_sent_at to just before that
+      // event: the next minute retries it and what follows (within the 5-min window), never what was delivered.
+      let failedAt: number | null = null
       for (const e of events) {
         const res = await send(row, payloadFor(e, sub.settings.lang, row.tz))
-        if (res === 'gone') { await store.remove(row.endpoint); ok = false; break }
-        if (res === 'error') ok = false
+        if (res === 'gone') { await store.remove(row.endpoint); failedAt = -1; break }
+        if (res === 'error') { failedAt = e.at.getTime(); break }
       }
-      // On a transient error leave last_sent_at alone so the next minute retries (within the 5-min window).
-      if (ok) await store.markSent(row.endpoint, now.getTime())
+      if (failedAt === null) await store.markSent(row.endpoint, now.getTime())
+      else if (failedAt > 0 && failedAt - 1 > row.last_sent_at) await store.markSent(row.endpoint, failedAt - 1)
     } catch (err) {
       console.error('cron row failed', row.endpoint.slice(0, 60), err)
     }

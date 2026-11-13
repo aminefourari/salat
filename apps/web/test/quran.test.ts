@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import quran from '../../../data/quran.json'
 import adhkar from '../../../data/adhkar.json'
-import { ayahIndex, hizbStarts, parseRecitation, RECITERS, recitationApi, rubInfo, tafsirText, type Surah } from '../src/lib/quran'
+import { ayahIndex, hizbStarts, isBookmarked, MAX_BOOKMARKS, parseRecitation, RECITERS, recitationApi, rubInfo, tafsirText, toggleBookmark, type Surah } from '../src/lib/quran'
 import { badge, chapterTitle, translation, type Chapter } from '../src/lib/adhkar'
 import { memoLoad } from '../src/lib/load'
 
@@ -82,5 +82,37 @@ describe('memoLoad', () => {
     expect(await load()).toBe(2)
     expect(await load()).toBe(2)
     expect(calls).toBe(2)
+  })
+})
+
+describe('bookmarks', () => {
+  it('adds newest first, removes on second toggle, keeps at most MAX_BOOKMARKS', () => {
+    let list = toggleBookmark([], 2, 255, 1)
+    list = toggleBookmark(list, 18, 1, 2)
+    expect(list.map(b => [b.surah, b.ayah])).toEqual([[18, 1], [2, 255]])
+    expect(isBookmarked(list, 2, 255)).toBe(true)
+    list = toggleBookmark(list, 2, 255, 3)
+    expect(isBookmarked(list, 2, 255)).toBe(false)
+    for (let i = 1; i <= 30; i++) list = toggleBookmark(list, 3, i, 10 + i)
+    expect(list.length).toBe(MAX_BOOKMARKS)
+    expect(list[0]).toEqual({ surah: 3, ayah: 30, at: 40 })
+  })
+})
+
+describe('languages', () => {
+  it('every language has every string, and adhkar fall back to English where there is no translation', async () => {
+    const { t, detectLang, LANG_NAMES } = await import('../src/lib/i18n')
+    const { LANGS } = await import('../src/lib/prayer')
+    for (const l of LANGS) {
+      expect(LANG_NAMES[l]).toBeTruthy()
+      expect(t(l, 'notif.start', { prayer: 'X', time: '05:00' })).toContain('05:00')
+    }
+    expect(detectLang('de-AT')).toBe('de')
+    expect(detectLang('pt-BR')).toBe('pt')
+    expect(detectLang('sv-SE')).toBe('en')
+    const d = (adhkar as Chapter[])[0].items[0]
+    expect(translation(d, 'de')).toBe(d.en)
+    expect(translation(d, 'fr')).toBe(d.fr)
+    expect(translation(d, 'ar')).toBeNull()
   })
 })

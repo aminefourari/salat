@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import fixture from './fixtures/aachen-2026.json'
-import { computeDay, formatHM, nextPrayer, paramsFor, skyAt, type Settings } from '../src/lib/prayer'
-import { countryAt, methodForCountry } from '../src/lib/methods'
+import { computeDay, formatHM, nextPrayer, paramsFor, skyAt, type Resolved } from '../src/lib/prayer'
+import { countryAt } from '../src/lib/country'
+import { methodForCountry } from '../src/lib/methods'
 
 const TZ = 'Europe/Berlin'
 const HAGENOW = [53.4319, 11.1903] as const
 const KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
-const s: Settings = { method: 'aachen', asr: 'standard', lang: 'en' }
+const s: Resolved = { method: 'aachen', asr: 'standard', lang: 'en' }
 const mins = (hm: string) => +hm.slice(0, 2) * 60 + +hm.slice(3)
 const diff = (a: string, b: string) => ((mins(a) - mins(b) + 720 + 1440) % 1440) - 720
 

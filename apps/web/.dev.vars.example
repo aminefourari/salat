@@ -1,0 +1,5 @@
+# Copy to .dev.vars (git-ignored) for `npm run dev`. Never commit the real file.
+# VAPID private key as a JWK JSON string (EC P-256), the pair of VAPID_PUBLIC_KEY in src/lib/config.ts.
+# Generate a fresh pair for local testing with:  npx @pushforge/builder vapid
+# (then put its public key in src/lib/config.ts and public/sw.js locally only, and don't commit that change).
+VAPID_PRIVATE_KEY=

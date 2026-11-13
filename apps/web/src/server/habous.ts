@@ -1,6 +1,6 @@
 // Official Moroccan timetable (Ministry of Habous), ported from the fr255-watchface Worker
 // (github.com/iliassjabali/fr255-watchface, worker/src/adapters/habous-loader.ts).
-import type { DayTimes } from '../lib/prayer'
+import { dateIn, type DayTimes } from '../lib/prayer'
 import cities from './habous-cities.json'
 
 /** Six local "HH:MM" times: Fajr, sunrise, Dhuhr, Asr, Maghrib, Isha. */
@@ -28,6 +28,14 @@ export function parseMonth(text: string): HabousMonth | null {
   } catch {
     return null
   }
+}
+
+/** Months a client may ask for: last month to next month, Moroccan calendar (clients ask for today's or tomorrow's). */
+export function monthInWindow(ym: string, now: Date): boolean {
+  const [y, m] = dateIn(now, 'Africa/Casablanca').split('-').map(Number)
+  const [qy, qm] = ym.split('-').map(Number)
+  const diff = qy * 12 + qm - (y * 12 + m)
+  return diff >= -1 && diff <= 1
 }
 
 const MAX_KM = 25

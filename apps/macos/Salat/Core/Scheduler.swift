@@ -67,23 +67,53 @@ func dueEvents(days: [DayTimes], modes: [Prayer: AlertMode], reminder: Bool, ext
 
 /// What the alert loop has handled. The watermark moves to `now` on every step, so changing settings or location
 /// never replays the past; only time without steps (Mac asleep) is caught up, within the 6 h cap.
+/// `fired` and `pending` key events by day, prayer and kind, so a time that moves by up to 30 min (official Habous
+/// times arriving, a changed offset) neither fires twice nor gets skipped when it moved earlier past now.
 struct AlertClock {
     private(set) var watermark: Date
+    /// Event key → the time it fired at.
+    private var fired: [String: Date] = [:]
+    /// Event key → its time, for events seen still to come at the previous step.
+    private var pending: [String: Date] = [:]
+    private let moveTolerance: TimeInterval = 30 * 60
 
     /// `saved` is the last persisted watermark: don't replay more than the late window, never trust a future one.
     init(saved: Date?, now: Date) { watermark = min(max(saved ?? now, now - lateWindow), now) }
 
+    private static func key(_ e: AlertEvent) -> String {
+        let c = Calendar(identifier: .gregorian).dateComponents(in: .autoupdatingCurrent, from: e.prayerTime)
+        return "\(isoDate(c))/\(e.prayer.rawValue)/\(e.kind.rawValue)"
+    }
+
     /// Due events since the last step. Starts always come through (late ones say so). Other reminders are dropped
     /// when late, and the ones announcing a prayer (10 min before, Jumuʿah) also once that prayer started.
     mutating func step(days: [DayTimes], modes: [Prayer: AlertMode], reminder: Bool, extras: Extras = [], now: Date) -> [(event: AlertEvent, late: Bool)] {
-        let due = dueEvents(days: days, modes: modes, reminder: reminder, extras: extras, lastHandled: watermark, now: now)
+        let all = events(days: days, modes: modes, reminder: reminder, extras: extras)
+        let floor = now - maxBackfill
+        let tolerance = moveTolerance, pending = pending, fired = fired
+        let near = { (a: Date?, b: Date) in a.map { abs($0.timeIntervalSince(b)) <= tolerance } ?? false }
+        let due = all
             .filter { e in
-                switch e.event.kind {
+                guard e.at <= now, e.at > floor else { return false }
+                let k = Self.key(e)
+                // New since the last step, or seen coming and then moved earlier past the watermark.
+                guard e.at > self.watermark || near(pending[k], e.at) else { return false }
+                return !near(fired[k], e.at) // already fired at (about) this time
+            }
+            .map { ($0, now.timeIntervalSince($0.at) > lateWindow) }
+            .filter { e in
+                switch e.0.kind {
                 case .start: true
-                case .reminder, .jumuah: !e.late && e.event.prayerTime > now
-                case .adhkarMorning, .adhkarEvening, .kahf: !e.late
+                case .reminder, .jumuah: !e.1 && e.0.prayerTime > now
+                case .adhkarMorning, .adhkarEvening, .kahf: !e.1
                 }
             }
+            .map { (event: $0.0, late: $0.1) }
+        var nowFired = fired
+        for e in due { nowFired[Self.key(e.event)] = e.event.at }
+        self.fired = nowFired.filter { $0.value > now - 2 * 86_400 }
+        self.pending = Dictionary(all.filter { $0.at > now }.map { (Self.key($0), $0.at) }) { a, _ in a }
+            .filter { nowFired[$0.key] == nil }
         watermark = max(watermark, now)
         return due
     }

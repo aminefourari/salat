@@ -55,7 +55,7 @@ function MonthPage() {
         </tbody>
       </table>
       {official ? <p className="meta center">{t(lang, 'official')}</p>
-        : resolveMethod(loc.lat, loc.lon, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
+        : resolveMethod(loc.country, settings) === 'morocco' && <p className="meta center">{t(lang, 'approximate')}</p>}
       <p className="center no-print"><button className="btn" onClick={() => print()}>{t(lang, 'print')}</button></p>
     </>
   )

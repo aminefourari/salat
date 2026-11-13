@@ -5,10 +5,10 @@ import {
   setNotify, setSettings, testPush, useLocation, useNotify, useReadPrefs, useSettings,
 } from '../lib/client'
 import { VAPID_PUBLIC_KEY } from '../lib/config'
-import { t } from '../lib/i18n'
+import { LANG_NAMES, t } from '../lib/i18n'
 import { METHOD_IDS } from '../lib/methods'
 import { RECITERS } from '../lib/quran'
-import { hijriOffset, MAX_ADJUST, PRAYERS, resolveMethod, type Lang, type Settings } from '../lib/prayer'
+import { hijriOffset, LANGS, MAX_ADJUST, PRAYERS, resolveMethod, type Lang, type Settings } from '../lib/prayer'
 
 export const Route = createFileRoute('/settings')({ component: SettingsPage })
 
@@ -36,7 +36,7 @@ function SettingsPage() {
   }, [])
 
   const update = (patch: Partial<Settings>) => setSettings({ ...s, ...patch })
-  const auto = loc ? t(lang, `m.${resolveMethod(loc.lat, loc.lon, { ...s, method: 'auto' })}`) : '…'
+  const auto = loc ? t(lang, `m.${resolveMethod(loc.country, { ...s, method: 'auto' })}`) : '…'
 
   async function toggle() {
     setBusy(true); setError('')
@@ -73,7 +73,7 @@ function SettingsPage() {
             <div className="field">
               <label htmlFor="hijri">{t(lang, 'hijriOffset')}</label>
               <select id="hijri" value={s.hijri ?? 'auto'} onChange={e => update({ hijri: e.target.value === 'auto' ? undefined : Number(e.target.value) })}>
-                <option value="auto">{t(lang, 'hijriAuto', { n: signed(loc ? hijriOffset(loc.lat, loc.lon, { ...s, hijri: undefined }) : 0) })}</option>
+                <option value="auto">{t(lang, 'hijriAuto', { n: signed(loc ? hijriOffset(loc.country, { ...s, hijri: undefined }) : 0) })}</option>
                 {[-2, -1, 0, 1, 2].map(n => <option key={n} value={n}>{t(lang, 'days', { n: signed(n) })}</option>)}
               </select>
             </div>
@@ -115,6 +115,17 @@ function SettingsPage() {
               {t(lang, 'notifyReminder')}
               <input className="switch" type="checkbox" role="switch" checked={notify.reminder} onChange={e => setNotify({ ...notify, reminder: e.target.checked })} />
             </label>
+            {(notify.start || notify.reminder) && (
+              <fieldset className="prayer-picks">
+                <legend>{t(lang, 'notifyWhich')}</legend>
+                {PRAYERS.map((p, i) => (
+                  <label key={p} className="pick">
+                    <input type="checkbox" checked={!!(notify.prayers & (1 << i))} onChange={e => setNotify({ ...notify, prayers: e.target.checked ? notify.prayers | (1 << i) : notify.prayers & ~(1 << i) })} />
+                    {t(lang, p)}
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <label className="switch-row">
               {t(lang, 'notifyAdhkar')}
               <input className="switch" type="checkbox" role="switch" checked={notify.adhkar} onChange={e => setNotify({ ...notify, adhkar: e.target.checked })} />
@@ -149,9 +160,7 @@ function SettingsPage() {
           <div className="panel">
             <div className="field">
               <select id="lang" aria-label={t(lang, 'language')} value={lang} onChange={e => update({ lang: e.target.value as Lang })}>
-                <option value="ar">العربية</option>
-                <option value="en">English</option>
-                <option value="fr">Français</option>
+                {LANGS.map(l => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
               </select>
             </div>
           </div>

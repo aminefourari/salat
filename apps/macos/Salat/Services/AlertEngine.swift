@@ -56,8 +56,11 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.location.requestOnce(); self?.tick() }
         }
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick() } }
-        timer?.tolerance = 0.2
+        // .common: also fire while a menu is tracking or a modal panel runs (else a prayer can pass without its adhan).
+        let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick() } }
+        t.tolerance = 0.2
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
         tick()
     }
 
@@ -189,7 +192,7 @@ final class AlertEngine: NSObject, UNUserNotificationCenterDelegate {
         switch section {
         case .quran: if settings.d.lastSurah != 18 { settings.d.lastSurah = 18; settings.d.lastAyah = 1 }
         case .adhkar: settings.d.lastAdhkarChapter = morningEveningAdhkar
-        case .prayer: break
+        case .prayer, .month: break
         }
         UserDefaults.standard.set(section.rawValue, forKey: "section")
         NotificationCenter.default.post(name: .salatOpenSection, object: nil)
