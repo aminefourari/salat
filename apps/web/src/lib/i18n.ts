@@ -41,6 +41,7 @@ const en = {
   continueReading: 'Continue: {surah}, ayah {ayah}',
   surahs: 'Surahs', hizbs: 'Hizbs', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ Hizb {n}', 'rub.2': '½ Hizb {n}', 'rub.3': '¾ Hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Bookmarks', bookmark: 'Bookmark this ayah', removeBookmark: 'Remove bookmark', noBookmarks: 'No bookmarks yet. Tap ☆ under an ayah to save it.',
+  prevSurah: 'Previous surah', nextSurah: 'Next surah', goToAyah: 'Go to ayah', searchQuran: 'Search the Quran (Arabic text or 2:255)', noResults: 'No matching ayah.',
 }
 type Key = keyof typeof en
 
@@ -84,6 +85,7 @@ const fr: Record<Key, string> = {
   continueReading: 'Reprendre : {surah}, verset {ayah}',
   surahs: 'Sourates', hizbs: 'Hizbs', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ du hizb {n}', 'rub.2': '½ du hizb {n}', 'rub.3': '¾ du hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Signets', bookmark: 'Marquer ce verset', removeBookmark: 'Retirer le signet', noBookmarks: 'Aucun signet. Touchez ☆ sous un verset pour l’enregistrer.',
+  prevSurah: 'Sourate précédente', nextSurah: 'Sourate suivante', goToAyah: 'Aller au verset', searchQuran: 'Rechercher dans le Coran (texte arabe ou 2:255)', noResults: 'Aucun verset trouvé.',
 }
 
 const ar: Record<Key, string> = {
@@ -126,6 +128,7 @@ const ar: Record<Key, string> = {
   continueReading: 'متابعة: {surah}، الآية {ayah}',
   surahs: 'السور', hizbs: 'الأحزاب', juzN: 'الجزء {n}', hizbN: 'الحزب {n}', 'rub.1': 'ربع الحزب {n}', 'rub.2': 'نصف الحزب {n}', 'rub.3': 'ثلاثة أرباع الحزب {n}', tafsir: 'التفسير',
   bookmarks: 'العلامات', bookmark: 'حفظ هذه الآية', removeBookmark: 'إزالة العلامة', noBookmarks: 'لا توجد علامات بعد. اضغط ☆ تحت أي آية لحفظها.',
+  prevSurah: 'السورة السابقة', nextSurah: 'السورة التالية', goToAyah: 'الانتقال إلى آية', searchQuran: 'ابحث في القرآن (نص الآية أو ٢:٢٥٥)', noResults: 'لا توجد آية مطابقة.',
 }
 
 const de: Record<Key, string> = {
@@ -168,6 +171,7 @@ const de: Record<Key, string> = {
   continueReading: 'Weiterlesen: {surah}, Vers {ayah}',
   surahs: 'Suren', hizbs: 'Hizbs', juzN: 'Dschuz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ Hizb {n}', 'rub.2': '½ Hizb {n}', 'rub.3': '¾ Hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Lesezeichen', bookmark: 'Diesen Vers merken', removeBookmark: 'Lesezeichen entfernen', noBookmarks: 'Noch keine Lesezeichen. Tippe unter einem Vers auf ☆, um ihn zu speichern.',
+  prevSurah: 'Vorherige Sure', nextSurah: 'Nächste Sure', goToAyah: 'Zu Vers', searchQuran: 'Im Koran suchen (arabischer Text oder 2:255)', noResults: 'Kein passender Vers.',
 }
 
 const nl: Record<Key, string> = {
@@ -210,6 +214,7 @@ const nl: Record<Key, string> = {
   continueReading: 'Verder lezen: {surah}, vers {ayah}',
   surahs: 'Soera’s', hizbs: 'Hizbs', juzN: 'Djoez {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ hizb {n}', 'rub.2': '½ hizb {n}', 'rub.3': '¾ hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Bladwijzers', bookmark: 'Dit vers bewaren', removeBookmark: 'Bladwijzer verwijderen', noBookmarks: 'Nog geen bladwijzers. Tik op ☆ onder een vers om het te bewaren.',
+  prevSurah: 'Vorige soera', nextSurah: 'Volgende soera', goToAyah: 'Naar vers', searchQuran: 'Zoeken in de Koran (Arabische tekst of 2:255)', noResults: 'Geen passend vers.',
 }
 
 const es: Record<Key, string> = {
@@ -252,6 +257,7 @@ const es: Record<Key, string> = {
   continueReading: 'Continuar: {surah}, aleya {ayah}',
   surahs: 'Suras', hizbs: 'Hizbs', juzN: 'Yuz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ del hizb {n}', 'rub.2': '½ del hizb {n}', 'rub.3': '¾ del hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Marcadores', bookmark: 'Guardar esta aleya', removeBookmark: 'Quitar marcador', noBookmarks: 'Aún no hay marcadores. Toca ☆ bajo una aleya para guardarla.',
+  prevSurah: 'Sura anterior', nextSurah: 'Sura siguiente', goToAyah: 'Ir a la aleya', searchQuran: 'Buscar en el Corán (texto árabe o 2:255)', noResults: 'Ninguna aleya coincide.',
 }
 
 const pt: Record<Key, string> = {
@@ -294,6 +300,7 @@ const pt: Record<Key, string> = {
   continueReading: 'Continuar: {surah}, versículo {ayah}',
   surahs: 'Suratas', hizbs: 'Hizbs', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ do hizb {n}', 'rub.2': '½ do hizb {n}', 'rub.3': '¾ do hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Marcadores', bookmark: 'Salvar este versículo', removeBookmark: 'Remover marcador', noBookmarks: 'Ainda não há marcadores. Toque em ☆ abaixo de um versículo para salvá-lo.',
+  prevSurah: 'Surata anterior', nextSurah: 'Próxima surata', goToAyah: 'Ir para o versículo', searchQuran: 'Pesquisar no Alcorão (texto árabe ou 2:255)', noResults: 'Nenhum versículo encontrado.',
 }
 
 const it: Record<Key, string> = {
@@ -336,6 +343,7 @@ const it: Record<Key, string> = {
   continueReading: 'Continua: {surah}, versetto {ayah}',
   surahs: 'Sure', hizbs: 'Hizb', juzN: 'Juz {n}', hizbN: 'Hizb {n}', 'rub.1': '¼ dell’hizb {n}', 'rub.2': '½ dell’hizb {n}', 'rub.3': '¾ dell’hizb {n}', tafsir: 'Tafsir',
   bookmarks: 'Segnalibri', bookmark: 'Salva questo versetto', removeBookmark: 'Rimuovi segnalibro', noBookmarks: 'Ancora nessun segnalibro. Tocca ☆ sotto un versetto per salvarlo.',
+  prevSurah: 'Sura precedente', nextSurah: 'Sura successiva', goToAyah: 'Vai al versetto', searchQuran: 'Cerca nel Corano (testo arabo o 2:255)', noResults: 'Nessun versetto trovato.',
 }
 
 const DICT: Record<Lang, Record<Key, string>> = { en, fr, ar, de, nl, es, pt, it }

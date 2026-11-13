@@ -81,3 +81,31 @@ export function tafsirText(html: string): string[] {
     .replace(/&(#\d+|[a-z]+);/gi, (m, e: string) => (e[0] === '#' ? String.fromCodePoint(Number(e.slice(1))) : ENTITIES[e.toLowerCase()] ?? m))
     .split('\n').map(x => x.trim()).filter(Boolean)
 }
+
+/**
+ * Search key for Arabic: drops tashkeel, Quranic marks, tatweel, spaces, every alef and lone hamza (so the Uthmani
+ * الرحمـٰن / ٱلصَّلَوٰة / يَـٰٓأَيُّهَا match the typed الرحمن / الصلاة / يا أيها). Mirrors Swift `searchKey`.
+ * ponytail: loose on purpose (alefs and word breaks are ignored); a few rare Uthmani spellings still need the Uthmani form.
+ */
+export const searchKey = (s: string) =>
+  s.replace(/\u0648\u0670/g, '\u0627').replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+    .replace(/[\u0621\u0627\u0622\u0623\u0625\u0671]/g, '').replace(/\u0649/g, '\u064A').replace(/\s+/g, '')
+
+export type AyahRef = { surah: number; ayah: number }
+const keys = new WeakMap<Surah[], string[][]>()
+/** Ayahs containing `q` in mushaf order (at most `limit`); "2:255" (Latin or Arabic digits) is that ayah. */
+export function searchAyahs(surahs: Surah[], q: string, limit = 50): AyahRef[] {
+  const ref = q.replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660)).match(/^\s*(\d+)\s*[:.]\s*(\d+)\s*$/)
+  if (ref) {
+    const surah = Number(ref[1]), ayah = Number(ref[2])
+    return surah >= 1 && surah <= surahs.length && ayah >= 1 && ayah <= surahs[surah - 1].ayahs.length ? [{ surah, ayah }] : []
+  }
+  const k = searchKey(q)
+  if (k.length < 2 || !/[؀-ۿ]/.test(k)) return []
+  let all = keys.get(surahs)
+  if (!all) keys.set(surahs, (all = surahs.map(s => s.ayahs.map(searchKey))))
+  const out: AyahRef[] = []
+  for (let i = 0; i < all.length && out.length < limit; i++)
+    for (let j = 0; j < all[i].length && out.length < limit; j++) if (all[i][j].includes(k)) out.push({ surah: i + 1, ayah: j + 1 })
+  return out
+}

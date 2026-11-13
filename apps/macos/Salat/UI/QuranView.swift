@@ -13,6 +13,10 @@ struct QuranView: View {
     @State private var selection: Int?
     /// Ayah to open the selected surah at (from the hizb list).
     @State private var jump: Int?
+    /// Bumped by every jump so picking the same ayah again still scrolls to it.
+    @State private var jumpTick = 0
+    @State private var query = ""
+    @State private var gotoText = ""
     @State private var listMode = ListMode.surahs
     enum ListMode { case surahs, hizbs, bookmarks }
     /// Reciter for this listen only; nil = the default from Settings.
@@ -30,22 +34,25 @@ struct QuranView: View {
                     Text(t(.bookmarks, lang)).tag(ListMode.bookmarks)
                 }
                 .pickerStyle(.segmented).labelsHidden().padding(8)
-                switch listMode {
-                case .surahs: surahList
-                case .hizbs: hizbList
-                case .bookmarks: bookmarkList
+                if !query.isEmpty { searchResults } else {
+                    switch listMode {
+                    case .surahs: surahList
+                    case .hizbs: hizbList
+                    case .bookmarks: bookmarkList
+                    }
                 }
             }
             .background(Theme.panelStrong)
             .navigationSplitViewColumnWidth(min: 220, ideal: 260)
         } detail: {
             if let n = selection {
-                SurahView(surah: QuranText.surahs[n - 1], settings: settings, player: player, reciter: reciter, startAyah: jump)
-                    .id("\(n):\(jump ?? 0)")
+                SurahView(surah: QuranText.surahs[n - 1], settings: settings, player: player, reciter: reciter, startAyah: jump) { open($0) }
+                    .id("\(n):\(jump ?? 0):\(jumpTick)")
             } else {
                 Text(t(.chooseSurah, lang)).font(Theme.kufi(22)).foregroundStyle(Theme.soft)
             }
         }
+        .searchable(text: $query, placement: .sidebar, prompt: t(.searchQuran, lang))
         .themedWindow()
         .toolbar { toolbar }
         .navigationTitle(selection.map { QuranText.surahs[$0 - 1].ar } ?? t(.quran, lang))
@@ -56,6 +63,33 @@ struct QuranView: View {
             if let n { settings.d.lastSurah = n }
         }
         .environment(\.layoutDirection, lang.isRTL ? .rightToLeft : .leftToRight)
+    }
+
+    /// Opens a surah, optionally at an ayah.
+    func open(_ surah: Int, at ayah: Int? = nil) {
+        jump = ayah; selection = surah; jumpTick += 1
+    }
+
+    @ViewBuilder var searchResults: some View {
+        let hits = searchAyahs(query)
+        if hits.isEmpty {
+            Text(t(.noResults, lang)).font(Theme.plex(12)).foregroundStyle(Theme.soft).padding().frame(maxHeight: .infinity, alignment: .top)
+        } else {
+            List(hits, id: \.self) { h in
+                let s = QuranText.surahs[h.surah - 1]
+                Button { open(h.surah, at: h.ayah) } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(lang == .ar ? s.ar : s.en) \(h.ayah.formatted(.number.locale(lang.locale)))").font(Theme.plex(13, semibold: true))
+                        Text(s.ayahs[h.ayah - 1]).font(.custom(quranFont, size: 16)).lineLimit(2)
+                            .frame(maxWidth: .infinity, alignment: .trailing).environment(\.layoutDirection, .rightToLeft)
+                    }
+                    .padding(.vertical, 2)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+            .scrollContentBackground(.hidden)
+        }
     }
 
     var surahList: some View {
@@ -81,7 +115,7 @@ struct QuranView: View {
         List(hizbStarts(QuranText.surahs), id: \.hizb) { h in
             let s = QuranText.surahs[h.surah - 1]
             let fmt = { (n: Int) in n.formatted(.number.locale(lang.locale)) }
-            Button { jump = h.ayah; selection = h.surah } label: {
+            Button { open(h.surah, at: h.ayah) } label: {
                 HStack(spacing: 10) {
                     StarBadge(text: fmt(h.hizb))
                     VStack(alignment: .leading, spacing: 0) {
@@ -106,7 +140,7 @@ struct QuranView: View {
         } else {
             List(list, id: \.at) { b in
                 let s = QuranText.surahs[b.surah - 1]
-                Button { jump = b.ayah; selection = b.surah } label: {
+                Button { open(b.surah, at: b.ayah) } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "bookmark.fill").foregroundStyle(Theme.gold)
                         VStack(alignment: .leading, spacing: 0) {
@@ -131,6 +165,21 @@ struct QuranView: View {
     var selectedIsLoaded: Bool { player.surah == selection && player.reciter == reciter && player.state == .ready }
 
     @ToolbarContentBuilder var toolbar: some ToolbarContent {
+        ToolbarItemGroup {
+            Button(t(.prevSurah, lang), systemImage: "chevron.backward") { selection.map { open($0 - 1) } }
+                .disabled((selection ?? 1) <= 1)
+            TextField(t(.goToAyah, lang), text: $gotoText)
+                .frame(width: 70)
+                .help(t(.goToAyah, lang))
+                .onSubmit {
+                    let digits = String(gotoText.unicodeScalars.map { (0x0660...0x0669).contains($0.value) ? Character(Unicode.Scalar($0.value - 0x0660 + 48)!) : Character($0) })
+                    if let s = selection, let a = Int(digits.trimmingCharacters(in: .whitespaces)), (1...QuranText.surahs[s - 1].ayahs.count).contains(a) {
+                        open(s, at: a); gotoText = ""
+                    }
+                }
+            Button(t(.nextSurah, lang), systemImage: "chevron.forward") { selection.map { open($0 + 1) } }
+                .disabled((selection ?? 114) >= 114)
+        }
         ToolbarItem {
             Picker(t(.reciter, lang), selection: Binding(get: { reciter }, set: { listenReciter = $0 })) {
                 ForEach(Reciter.all) { Text($0.name(lang)).tag($0.id) }
@@ -156,6 +205,8 @@ struct SurahView: View {
     let player: QuranPlayer
     let reciter: Int
     var startAyah: Int?
+    /// Opens another surah (the previous/next links under the last ayah).
+    var openSurah: (Int) -> Void = { _ in }
     @State private var tafsirAyah: TafsirAyah?
 
     var lang: Lang { settings.d.lang }
@@ -226,6 +277,17 @@ struct SurahView: View {
                             }
                             .id(a)
                         }
+                        HStack {
+                            if surah.n > 1 {
+                                Button("‹ \(QuranText.surahs[surah.n - 2].ar)") { openSurah(surah.n - 1) }.help(t(.prevSurah, lang))
+                            }
+                            Spacer()
+                            if surah.n < 114 {
+                                Button("\(QuranText.surahs[surah.n].ar) ›") { openSurah(surah.n + 1) }.help(t(.nextSurah, lang))
+                            }
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle()).font(.custom(quranFont, size: 18))
+                        .padding(.top, 16)
                     }
                     .padding(24)
                     .frame(maxWidth: 860)

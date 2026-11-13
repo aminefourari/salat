@@ -6,7 +6,7 @@ import { useLazy, useReadPrefs, useSettings } from '../lib/client'
 import { fetchJson, memoLoad } from '../lib/load'
 import { t } from '../lib/i18n'
 import type { Lang } from '../lib/prayer'
-import { arabicDigits, ayahIndex, hizbStarts, isBookmarked, parseRecitation, RECITERS, recitationApi, rubInfo, TAFSIRS, tafsirApi, tafsirText, toggleBookmark, type Bookmark, type Recitation, type Surah } from '../lib/quran'
+import { arabicDigits, ayahIndex, hizbStarts, isBookmarked, parseRecitation, RECITERS, recitationApi, rubInfo, TAFSIRS, tafsirApi, tafsirText, toggleBookmark, searchAyahs, type Bookmark, type Recitation, type Surah } from '../lib/quran'
 
 export const Route = createFileRoute('/quran')({
   validateSearch: (q: Record<string, unknown>): { s?: number; a?: number } => {
@@ -29,7 +29,7 @@ function QuranPage() {
   const { data: surahs, failed, retry } = useLazy(loadQuran)
   if (failed) return <div className="panel" role="alert"><p>{t(lang, 'loadFailed')}</p><button className="btn" onClick={retry}>{t(lang, 'retry')}</button></div>
   if (!surahs) return <p className="loading">{t(lang, 'loading')}</p>
-  return s ? <Reader key={`${s}:${a}`} surah={surahs[s - 1]} startAyah={a} lang={lang} /> : <SurahList surahs={surahs} lang={lang} />
+  return s ? <Reader key={`${s}:${a}`} surahs={surahs} surah={surahs[s - 1]} startAyah={a} lang={lang} /> : <SurahList surahs={surahs} lang={lang} />
 }
 
 function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
@@ -54,7 +54,7 @@ function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
         <button type="button" aria-pressed={mode === 'bookmarks'} onClick={() => setMode('bookmarks')}>{t(lang, 'bookmarks')}</button>
       </div>
       {mode === 'hizbs' ? <HizbList surahs={surahs} lang={lang} /> : mode === 'bookmarks' ? <BookmarkList surahs={surahs} lang={lang} list={prefs.bookmarks} /> : <>
-      <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'search')} aria-label={t(lang, 'search')} />
+      <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'searchQuran')} aria-label={t(lang, 'searchQuran')} />
       <ul className="list">
         {shown.map(x => (
           <li key={x.n}>
@@ -69,6 +69,7 @@ function SurahList({ surahs, lang }: { surahs: Surah[]; lang: Lang }) {
           </li>
         ))}
       </ul>
+      {q.trim() && <AyahResults surahs={surahs} q={q} lang={lang} quiet={shown.length > 0} />}
       </>}
     </>
   )
@@ -119,6 +120,41 @@ function BookmarkList({ surahs, lang, list }: { surahs: Surah[]; lang: Lang; lis
   )
 }
 
+/** Ayahs matching `q` anywhere in the Quran (text or "2:255"); `quiet` hides the empty message. */
+function AyahResults({ surahs, q, lang, quiet }: { surahs: Surah[]; q: string; lang: Lang; quiet?: boolean }) {
+  const hits = useMemo(() => searchAyahs(surahs, q), [surahs, q])
+  if (!hits.length) return quiet ? null : <p className="meta">{t(lang, 'noResults')}</p>
+  return (
+    <ul className="list">
+      {hits.map(h => {
+        const s = surahs[h.surah - 1]
+        return (
+          <li key={`${h.surah}:${h.ayah}`}>
+            <Link to="/quran" search={h.ayah > 1 ? { s: h.surah, a: h.ayah } : { s: h.surah }} className="list-row">
+              <span className="list-main">
+                <span className="list-title">{lang === 'ar' ? s.ar : s.en} {num(h.ayah, lang)}</span>
+                <span className="list-sub hit" lang="ar" dir="rtl">{s.ayahs[h.ayah - 1]}</span>
+              </span>
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+/** Previous/next surah links (mirrored in RTL by the ‹ › glyphs). */
+function SurahNav({ surahs, n, lang, children }: { surahs: Surah[]; n: number; lang: Lang; children?: React.ReactNode }) {
+  const name = (k: number) => (lang === 'ar' ? surahs[k - 1].ar : surahs[k - 1].en)
+  return (
+    <nav className="surah-nav">
+      {n > 1 ? <Link to="/quran" search={{ s: n - 1 }} title={t(lang, 'prevSurah')}>‹ {name(n - 1)}</Link> : <span />}
+      {children}
+      {n < 114 ? <Link to="/quran" search={{ s: n + 1 }} title={t(lang, 'nextSurah')}>{name(n + 1)} ›</Link> : <span />}
+    </nav>
+  )
+}
+
 /** Juz/hizb/quarter marker shown above the ayah where a rubʿ starts. */
 function rubLabel(rub: number, lang: Lang) {
   const { juz, hizb, quarter } = rubInfo(rub)
@@ -155,7 +191,7 @@ function Tafsir({ surah, ayah, lang }: { surah: number; ayah: number; lang: Lang
 
 type PlayState = 'idle' | 'loading' | 'playing' | 'paused' | 'error'
 
-function Reader({ surah, startAyah, lang }: { surah: Surah; startAyah?: number; lang: Lang }) {
+function Reader({ surahs, surah, startAyah, lang }: { surahs: Surah[]; surah: Surah; startAyah?: number; lang: Lang }) {
   const [prefs, setPrefs] = useReadPrefs()
   // A reciter picked here is for this listen only; the default lives in Settings (as in the Mac app).
   const [reciter, setReciter] = useState(prefs.reciter)
@@ -166,6 +202,16 @@ function Reader({ surah, startAyah, lang }: { surah: Surah; startAyah?: number; 
   // The recitation being fetched, keyed by reciter+surah so a stale response is dropped.
   const pending = useRef<{ key: string; p: Promise<Recitation> } | null>(null)
   const key = `${reciter}:${surah.n}`
+  const [q, setQ] = useState('')
+  const [tools, setTools] = useState(false)
+
+  /** Scrolls to an ayah of this surah without reloading (the recitation keeps playing). */
+  function goTo(ayah: number) {
+    if (!(ayah >= 1 && ayah <= surah.ayahs.length)) return
+    document.getElementById(`a${ayah}`)?.scrollIntoView({ block: 'start' })
+    setPrefs({ ...prefs, surah: surah.n, ayah })
+    setTools(false)
+  }
 
   const start = startAyah ?? (prefs.surah === surah.n ? prefs.ayah : 1)
   const rubAt = useMemo(() => new Map(surah.rub), [surah])
@@ -254,6 +300,21 @@ function Reader({ surah, startAyah, lang }: { surah: Surah; startAyah?: number; 
       </div>
       {state === 'error' && <p className="notice" role="alert">{t(lang, 'audioError')}</p>}
 
+      <SurahNav surahs={surahs} n={surah.n} lang={lang}>
+        <button type="button" className="tools-toggle" aria-expanded={tools} aria-controls="reader-tools" onClick={() => setTools(!tools)}
+          title={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`} aria-label={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+        </button>
+      </SurahNav>
+      {tools && <div className="reader-tools" id="reader-tools">
+        <form className="goto" onSubmit={e => { e.preventDefault(); goTo(Number(latinDigits(String(new FormData(e.currentTarget).get('a'))))) }}>
+          <input name="a" type="text" inputMode="numeric" autoFocus placeholder={`1–${num(surah.ayahs.length, lang)}`} aria-label={t(lang, 'goToAyah')} />
+          <button className="btn" type="submit">{t(lang, 'goToAyah')}</button>
+        </form>
+        <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'searchQuran')} aria-label={t(lang, 'searchQuran')} />
+        {q.trim() && <AyahResults surahs={surahs} q={q} lang={lang} />}
+      </div>}
+
       <div className="mushaf" lang="ar" dir="rtl">
         {surah.n !== 1 && surah.n !== 9 && <p className="bismillah">{BISMILLAH}</p>}
         {surah.ayahs.map((text, i) => {
@@ -277,6 +338,7 @@ function Reader({ surah, startAyah, lang }: { surah: Surah; startAyah?: number; 
           )
         })}
       </div>
+      <SurahNav surahs={surahs} n={surah.n} lang={lang} />
       <audio ref={audio} preload="none" onTimeUpdate={onTime} onPlay={() => setState('playing')}
         onPause={() => setState(s => (s === 'error' ? s : 'paused'))} onEnded={() => setState('paused')} onError={() => rec && fail()} />
     </>

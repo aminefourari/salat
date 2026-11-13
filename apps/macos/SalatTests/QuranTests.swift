@@ -13,6 +13,18 @@ final class ReadAlongTests: XCTestCase {
         XCTAssertEqual(QuranText.surahs[0].ar, "الفاتحة")
     }
 
+    func testAyahSearch() {
+        XCTAssertEqual(searchKey("ٱلرَّحْمَـٰنِ"), searchKey("الرحمن"))
+        XCTAssertEqual(searchAyahs("الحي القيوم").first, AyahRef(surah: 2, ayah: 255))
+        XCTAssertEqual(searchAyahs("قل هو الله أحد"), [AyahRef(surah: 112, ayah: 1)])
+        XCTAssertEqual(searchAyahs("الصلاة").first, AyahRef(surah: 2, ayah: 3))
+        XCTAssertGreaterThan(searchAyahs("يا أيها الذين آمنوا").count, 40)
+        XCTAssertEqual(searchAyahs("الله").count, 50)
+        XCTAssertEqual(searchAyahs("2:255"), [AyahRef(surah: 2, ayah: 255)])
+        XCTAssertEqual(searchAyahs("١١٤:٦"), [AyahRef(surah: 114, ayah: 6)])
+        XCTAssertEqual(searchAyahs("1:8") + searchAyahs("ا") + searchAyahs("hello"), [])
+    }
+
     func testHizbs() {
         let r = [1, 240].map(RubInfo.init).map { [$0.juz, $0.hizb, $0.quarter] }
         XCTAssertEqual(r, [[1, 1, 0], [30, 60, 3]])
