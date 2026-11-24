@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nearestCity } from '../src/server/cities'
+import { nearestCity, searchCities } from '../src/server/cities'
 
 describe('nearestCity', () => {
   it('finds the town for GPS coordinates', () => {
@@ -14,5 +14,18 @@ describe('nearestCity', () => {
   })
   it('returns null far from any town', () => {
     expect(nearestCity(0, -140)).toBeNull()
+  })
+})
+
+describe('searchCities', () => {
+  it('matches a prefix, ignoring case and accents, shortest first', () => {
+    const r = searchCities('casablanca')
+    expect(r).toContainEqual({ name: 'Casablanca', country: 'MA', lat: 33.59, lon: -7.61 })
+    expect(searchCities('AACHEN')[0].name).toBe('Aachen')
+    expect(searchCities('sale').some(c => c.name === 'Salé')).toBe(true)
+    expect(r.length).toBeLessThanOrEqual(8)
+  })
+  it('returns nothing for a blank query', () => {
+    expect(searchCities('  ')).toEqual([])
   })
 })

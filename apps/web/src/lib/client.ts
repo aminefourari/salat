@@ -6,7 +6,8 @@ import { fetchJson } from './load'
 import type { Bookmark } from './quran'
 import { adjustDay, computeDay, dateIn, nextDate, resolved, usesHabous, type DayTimes, type Settings } from './prayer'
 
-export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null }
+/** `manual`: a city chosen in settings; the device position is then not used. */
+export type Loc = { lat: number; lon: number; at: number; country: string | null; city?: string | null; manual?: true }
 /** `prayers`: which prayers notify, a bitmask in PRAYERS order (31 = all). */
 export type Notify = { start: boolean; reminder: boolean; adhkar: boolean; friday: boolean; prayers: number }
 
@@ -56,18 +57,20 @@ const km = (a: Loc, b: { lat: number; lon: number }) => {
 }
 
 export type LocStatus = 'locating' | 'ok' | 'denied'
-/** Requests the position on mount; saves it (and re-syncs push) when it moved more than 5 km. */
+/** Requests the position on mount (unless a city was chosen); saves it (and re-syncs push) when it moved more than 5 km.
+ * `retry` also leaves a chosen city for the device position. */
 export function useLocation() {
   const loc = useLoc()
-  const [status, setStatus] = useState<LocStatus>('locating')
-  const locate = useCallback(() => {
+  const [status, setStatus] = useState<LocStatus>(() => (loc?.manual ? 'ok' : 'locating'))
+  const locate = useCallback((force: boolean) => {
+    if (!force && read<Loc | null>(KEYS.loc, null)?.manual) return setStatus('ok')
     if (!('geolocation' in navigator)) return setStatus('denied')
     setStatus('locating')
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const prev = read<Loc | null>(KEYS.loc, null)
         const next = { lat: coords.latitude, lon: coords.longitude }
-        if (!prev || km(prev, next) > 5) {
+        if (!prev || prev.manual || km(prev, next) > 5) {
           // The world borders are ~600 KB: loaded only when the device reaches a new place (then kept by the service
           // worker). The location is saved once its country is known, so times never show with a guessed method.
           import('./country').then(({ countryAt }) => {
@@ -82,8 +85,19 @@ export function useLocation() {
       { enableHighAccuracy: false, maximumAge: 10 * 60_000, timeout: 20_000 },
     )
   }, [])
-  useEffect(locate, [locate])
-  return { loc, status, retry: locate }
+  useEffect(() => locate(false), [locate])
+  return { loc, status, retry: useCallback(() => locate(true), [locate]) }
+}
+
+export type City = { name: string; country: string; lat: number; lon: number }
+export const searchCities = (q: string, signal?: AbortSignal) =>
+  fetch(`/api/place?q=${encodeURIComponent(q)}`, { signal }).then(r => r.json() as Promise<{ cities: City[] }>).then(r => r.cities)
+
+/** Uses `c` instead of the device position until `retry`. The method still comes from the country under it. */
+export async function chooseCity(c: City) {
+  const { countryAt } = await import('./country')
+  write<Loc>(KEYS.loc, { lat: c.lat, lon: c.lon, at: Date.now(), country: countryAt(c.lat, c.lon) ?? c.country, city: c.name, manual: true })
+  syncPush().catch(() => {})
 }
 
 /** Looks up the town for the saved location once (on our Worker) and stores it; offline it retries next open. */

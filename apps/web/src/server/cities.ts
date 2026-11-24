@@ -29,3 +29,18 @@ export function nearestCity(lat: number, lon: number, maxKm = 50): { name: strin
   const km = Math.sqrt(bestD) * 111.2
   return best < 0 || km > maxKm ? null : { name: ix.names[best], country: ix.cc[best] }
 }
+
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+let folded: string[] | undefined
+
+/** Towns whose name starts with `q` (case and accents ignored), shortest first. Mirrors Swift `CityIndex.search`. */
+export function searchCities(q: string, limit = 8): { name: string; country: string; lat: number; lon: number }[] {
+  const ix = (index ??= load())
+  const f = fold(q.trim())
+  if (!f) return []
+  const names = (folded ??= ix.names.map(fold))
+  const hits: number[] = []
+  names.forEach((n, i) => { if (n.startsWith(f)) hits.push(i) })
+  hits.sort((a, b) => names[a].length - names[b].length || (names[a] < names[b] ? -1 : names[a] > names[b] ? 1 : 0))
+  return hits.slice(0, limit).map(i => ({ name: ix.names[i], country: ix.cc[i], lat: +ix.lat[i].toFixed(2), lon: +ix.lon[i].toFixed(2) }))
+}

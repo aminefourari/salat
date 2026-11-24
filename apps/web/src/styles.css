@@ -377,3 +377,5 @@ select {
   .month-table tbody tr:nth-child(odd) { background: none; }
   .month-table tr.is-today { outline: none; }
 }
+.city-list { margin-bottom: .9rem; }
+.city-list .list-row { width: 100%; font: inherit; text-align: start; cursor: pointer; border-color: var(--line); }

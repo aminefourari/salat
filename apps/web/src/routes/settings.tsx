@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import {
-  currentPushSub, disablePush, enablePush, isIos, isStandalone, pushSupported,
+  chooseCity, currentPushSub, searchCities, type City, disablePush, enablePush, isIos, isStandalone, pushSupported,
   setNotify, setSettings, testPush, useLocation, useNotify, useReadPrefs, useSettings,
 } from '../lib/client'
 import { VAPID_PUBLIC_KEY } from '../lib/config'
@@ -22,7 +22,9 @@ function SettingsPage() {
   const [s] = useSettings()
   const [notify] = useNotify()
   const [read, setRead] = useReadPrefs()
-  const { loc } = useLocation()
+  const { loc, status, retry } = useLocation()
+  const [q, setQ] = useState('')
+  const [cities, setCities] = useState<City[]>([])
   const { lang } = s
   const [push, setPush] = useState<PushState>('loading')
   const [busy, setBusy] = useState(false)
@@ -34,6 +36,13 @@ function SettingsPage() {
     if (Notification.permission === 'denied') return setPush('denied')
     currentPushSub().then(sub => setPush(sub ? 'on' : 'off'), () => setPush('off'))
   }, [])
+
+  useEffect(() => {
+    if (!q.trim()) return setCities([])
+    const ctl = new AbortController()
+    const id = setTimeout(() => searchCities(q, ctl.signal).then(setCities, () => {}), 200)
+    return () => { clearTimeout(id); ctl.abort() }
+  }, [q])
 
   const update = (patch: Partial<Settings>) => setSettings({ ...s, ...patch })
   const auto = loc ? t(lang, `m.${resolveMethod(loc.country, { ...s, method: 'auto' })}`) : '…'
@@ -54,6 +63,25 @@ function SettingsPage() {
 
       <div className="settings-cols">
         <div>
+          <h2>{t(lang, 'location')}</h2>
+          <div className="panel">
+            <p>{loc ? loc.city ?? `${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)}` : t(lang, 'locating')}</p>
+            {status === 'denied' && <p className="meta" role="status">{t(lang, 'locationDenied')}</p>}
+            <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'searchCity')} aria-label={t(lang, 'searchCity')} />
+            {cities.length > 0 && (
+              <ul className="list city-list">
+                {cities.map(c => (
+                  <li key={`${c.name}${c.lat}${c.lon}`}>
+                    <button className="list-row" onClick={() => { chooseCity(c); setQ('') }}>
+                      <span className="list-main">{c.name}</span><span className="list-sub">{c.country}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {loc?.manual && <button className="btn" onClick={retry}>{t(lang, 'useMyLocation')}</button>}
+          </div>
+
           <h2>{t(lang, 'times')}</h2>
           <div className="panel">
             <div className="field">
