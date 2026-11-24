@@ -143,14 +143,14 @@ function AyahResults({ surahs, q, lang, quiet }: { surahs: Surah[]; q: string; l
   )
 }
 
-/** Previous/next surah links (mirrored in RTL by the ‹ › glyphs). */
+/** Previous/next surah links (arrows drawn in CSS, flipped in RTL like `.back`). */
 function SurahNav({ surahs, n, lang, children }: { surahs: Surah[]; n: number; lang: Lang; children?: React.ReactNode }) {
   const name = (k: number) => (lang === 'ar' ? surahs[k - 1].ar : surahs[k - 1].en)
   return (
     <nav className="surah-nav">
-      {n > 1 ? <Link to="/quran" search={{ s: n - 1 }} title={t(lang, 'prevSurah')}>‹ {name(n - 1)}</Link> : <span />}
+      {n > 1 ? <Link to="/quran" search={{ s: n - 1 }} className="prev" title={t(lang, 'prevSurah')}>{name(n - 1)}</Link> : <span />}
       {children}
-      {n < 114 ? <Link to="/quran" search={{ s: n + 1 }} title={t(lang, 'nextSurah')}>{name(n + 1)} ›</Link> : <span />}
+      {n < 114 ? <Link to="/quran" search={{ s: n + 1 }} className="next" title={t(lang, 'nextSurah')}>{name(n + 1)}</Link> : <span />}
     </nav>
   )
 }
