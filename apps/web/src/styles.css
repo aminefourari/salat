@@ -34,6 +34,11 @@ body::before {
   background-image: var(--pattern); background-size: 64px 64px; opacity: .09;
   mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 85%);
 }
+/* Installed on iOS the page runs under the status bar (black-translucent): veil it so scrolled text stays off the clock. 0 high in a browser tab. */
+body::after {
+  content: ''; position: fixed; z-index: 20; inset: 0 0 auto; height: env(safe-area-inset-top); pointer-events: none;
+  background: color-mix(in srgb, var(--top) 85%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
 button, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
 .meta { color: var(--soft); font-size: .85rem; margin: 1rem 0 0; }
@@ -260,7 +265,7 @@ select {
 .surah-ar { font: 400 2.8rem/1.3 'Amiri Quran', serif; color: var(--gold); padding-bottom: .35em; } /* room only below: Amiri Quran descends far under its baseline */
 .surah-en { font: 700 1.3rem/1.2 'Reem Kufi', sans-serif; }
 .reader-bar {
-  position: sticky; top: .5rem; z-index: 5; margin: 0 0 1rem; padding: .4rem; border-radius: 1.6rem;
+  position: sticky; top: calc(.5rem + env(safe-area-inset-top)); z-index: 5; margin: 0 0 1rem; padding: .4rem; border-radius: 1.6rem;
   background: color-mix(in srgb, var(--royal-deep) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
@@ -279,7 +284,7 @@ select {
 .btn.play { width: 2.6rem; height: 2.6rem; padding: 0; flex: none; }
 .mushaf { display: grid; gap: .25rem; }
 .bismillah { text-align: center; font: 400 1.7rem/2 'Amiri Quran', serif; color: var(--gold); margin: 0 0 .5rem; }
-.ayah { margin: 0; scroll-margin-top: 7.5rem; } /* clear the sticky reader bar */
+.ayah { margin: 0; scroll-margin-top: calc(7.5rem + env(safe-area-inset-top)); } /* clear the sticky reader bar */
 .ayah > button {
   display: block; width: 100%; text-align: start; background: none; border: 1px solid transparent; cursor: pointer;
   padding: .6rem .8rem; border-radius: 1rem; font: 400 1.65rem/2.3 'Amiri Quran', serif; color: var(--ink);
