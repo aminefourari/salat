@@ -289,31 +289,34 @@ function Reader({ surahs, surah, startAyah, lang }: { surahs: Surah[]; surah: Su
         </div>
       </header>
 
-      <div className="player" role="group" aria-label={t(lang, 'reciter')}>
-        <select value={reciter} onChange={e => setReciter(Number(e.target.value))} aria-label={t(lang, 'reciter')}>
-          {RECITERS.map(r => <option key={r.id} value={r.id}>{lang === 'ar' ? r.ar : r.latin}</option>)}
-        </select>
-        <button className="btn btn-solid play" onClick={toggle} disabled={state === 'loading'} aria-busy={state === 'loading'}
-          aria-label={state === 'loading' ? t(lang, 'loading') : state === 'playing' ? t(lang, 'pause') : t(lang, 'play')}>
-          {state === 'loading' ? '…' : state === 'playing' ? '❚❚' : '▶'}
-        </button>
+      {/* Sticky: reciter, play, previous/next surah and the tools stay reachable mid-surah. */}
+      <div className="reader-bar">
+        <div className="player" role="group" aria-label={t(lang, 'reciter')}>
+          <select value={reciter} onChange={e => setReciter(Number(e.target.value))} aria-label={t(lang, 'reciter')}>
+            {RECITERS.map(r => <option key={r.id} value={r.id}>{lang === 'ar' ? r.ar : r.latin}</option>)}
+          </select>
+          <button className="btn btn-solid play" onClick={toggle} disabled={state === 'loading'} aria-busy={state === 'loading'}
+            aria-label={state === 'loading' ? t(lang, 'loading') : state === 'playing' ? t(lang, 'pause') : t(lang, 'play')}>
+            {state === 'loading' ? '…' : state === 'playing' ? '❚❚' : '▶'}
+          </button>
+        </div>
+
+        <SurahNav surahs={surahs} n={surah.n} lang={lang}>
+          <button type="button" className="tools-toggle" aria-expanded={tools} aria-controls="reader-tools" onClick={() => setTools(!tools)}
+            title={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`} aria-label={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+          </button>
+        </SurahNav>
+        {tools && <div className="reader-tools" id="reader-tools">
+          <form className="goto" onSubmit={e => { e.preventDefault(); goTo(Number(latinDigits(String(new FormData(e.currentTarget).get('a'))))) }}>
+            <input name="a" type="text" inputMode="numeric" autoFocus placeholder={`1–${num(surah.ayahs.length, lang)}`} aria-label={t(lang, 'goToAyah')} />
+            <button className="btn" type="submit">{t(lang, 'goToAyah')}</button>
+          </form>
+          <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'searchQuran')} aria-label={t(lang, 'searchQuran')} />
+          {q.trim() && <AyahResults surahs={surahs} q={q} lang={lang} />}
+        </div>}
       </div>
       {state === 'error' && <p className="notice" role="alert">{t(lang, 'audioError')}</p>}
-
-      <SurahNav surahs={surahs} n={surah.n} lang={lang}>
-        <button type="button" className="tools-toggle" aria-expanded={tools} aria-controls="reader-tools" onClick={() => setTools(!tools)}
-          title={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`} aria-label={`${t(lang, 'goToAyah')} · ${t(lang, 'search')}`}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-        </button>
-      </SurahNav>
-      {tools && <div className="reader-tools" id="reader-tools">
-        <form className="goto" onSubmit={e => { e.preventDefault(); goTo(Number(latinDigits(String(new FormData(e.currentTarget).get('a'))))) }}>
-          <input name="a" type="text" inputMode="numeric" autoFocus placeholder={`1–${num(surah.ayahs.length, lang)}`} aria-label={t(lang, 'goToAyah')} />
-          <button className="btn" type="submit">{t(lang, 'goToAyah')}</button>
-        </form>
-        <input className="search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={t(lang, 'searchQuran')} aria-label={t(lang, 'searchQuran')} />
-        {q.trim() && <AyahResults surahs={surahs} q={q} lang={lang} />}
-      </div>}
 
       <div className="mushaf" lang="ar" dir="rtl">
         {surah.n !== 1 && surah.n !== 9 && <p className="bismillah">{BISMILLAH}</p>}
